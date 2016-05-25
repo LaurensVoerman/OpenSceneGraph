@@ -502,6 +502,7 @@ unsigned char *
 simage_tiff_load(std::istream& fin,
                  int& width_ret,
                  int& height_ret,
+                 int& depth_ret,
                  int& numComponents_ret,
                  uint16& bitspersample)
 {
@@ -509,7 +510,7 @@ simage_tiff_load(std::istream& fin,
     uint16 dataType;
     uint16 samplesperpixel;
     uint16 photometric;
-    uint32 w, h;
+    uint32 w, h, d;
     uint16 config;
     uint16* red;
     uint16* green;
@@ -521,6 +522,7 @@ simage_tiff_load(std::istream& fin,
     unsigned char *buffer;
     int width;
     int height;
+    unsigned int depth;
     unsigned char *currPtr;
 
     TIFFSetErrorHandler(tiff_error);
@@ -604,6 +606,10 @@ simage_tiff_load(std::istream& fin,
         tifferror = ERR_READ;
         return NULL;
     }
+    d = 1;
+    if (TIFFGetField(in, TIFFTAG_IMAGEDEPTH, &d) != 1) {
+        
+    }
 
 
     TIFFGetField(in, TIFFTAG_DATATYPE, &dataType);
@@ -632,7 +638,7 @@ simage_tiff_load(std::istream& fin,
     OSG_INFO<<"bytespersample="<<bytespersample<<std::endl;
     OSG_INFO<<"bytesperpixel="<<bytesperpixel<<std::endl;
 
-    buffer = new unsigned char [w*h*format];
+    buffer = new unsigned char [w*h*d*format];
 
     if (!buffer)
     {
@@ -642,12 +648,15 @@ simage_tiff_load(std::istream& fin,
     }
 
     // initialize memory
-    for(unsigned char* ptr=buffer;ptr<buffer+w*h*format;++ptr) *ptr = 0;
+    for(unsigned char* ptr=buffer;ptr<buffer+w*h*d*format;++ptr) *ptr = 0;
 
     width = w;
     height = h;
+    depth = d;
 
-    currPtr = buffer + (h-1)*w*format;
+    for (depth = 0; depth < d; ++depth) {
+
+    currPtr = buffer + (h-1)*w*format + depth*h*w*format;
 
     tifferror = ERR_NO_ERROR;
 
@@ -746,7 +755,7 @@ simage_tiff_load(std::istream& fin,
             tifferror = ERR_UNSUPPORTED;
             break;
     }
-
+    }
     if (inbuf) delete [] inbuf;
     TIFFClose(in);
 
@@ -757,6 +766,7 @@ simage_tiff_load(std::istream& fin,
     }
     width_ret = width;
     height_ret = height;
+    depth_ret = depth;
     if (photometric == PHOTOMETRIC_PALETTE)
         numComponents_ret = format;
     else
@@ -792,10 +802,11 @@ class ReaderWriterTIFF : public osgDB::ReaderWriter
             unsigned char *imageData = NULL;
             int width_ret = -1;
             int height_ret = -1;
+            int depth_ret = -1;
             int numComponents_ret = -1;
             uint16 bitspersample_ret = 0;
 
-            imageData = simage_tiff_load(fin, width_ret, height_ret, numComponents_ret, bitspersample_ret);
+            imageData = simage_tiff_load(fin, width_ret, height_ret, depth_ret, numComponents_ret, bitspersample_ret);
 
             if (imageData==NULL)
             {
@@ -807,7 +818,7 @@ class ReaderWriterTIFF : public osgDB::ReaderWriter
 
             int s = width_ret;
             int t = height_ret;
-            int r = 1;
+            int r = depth_ret;
 
             unsigned int pixelFormat =
                 numComponents_ret == 1 ? GL_LUMINANCE :
@@ -969,6 +980,9 @@ class ReaderWriterTIFF : public osgDB::ReaderWriter
 
             TIFFSetField(image, TIFFTAG_IMAGEWIDTH,img.s());
             TIFFSetField(image, TIFFTAG_IMAGELENGTH,img.t());
+            //TIFFTAG_IMAGEDEPTH
+            TIFFSetField(image, TIFFTAG_IMAGEDEPTH, img.r());
+
             TIFFSetField(image, TIFFTAG_BITSPERSAMPLE,bitsPerSample);
             TIFFSetField(image, TIFFTAG_SAMPLESPERPIXEL,samplesPerPixel);
             TIFFSetField(image, TIFFTAG_PHOTOMETRIC, photometric);
@@ -980,8 +994,10 @@ class ReaderWriterTIFF : public osgDB::ReaderWriter
             TIFFSetField(image, TIFFTAG_ROWSPERSTRIP, rowsperstrip);
 
             // Write the information to the file
-            for(int i = 0; i < img.t(); ++i) {
-                TIFFWriteScanline(image,(tdata_t)img.data(0,img.t()-i-1),i,0);
+            for (int slice = 0; slice < img.r(); ++slice) {
+                for(int i = 0; i < img.t(); ++i) {
+                    TIFFWriteScanline(image,(tdata_t)img.data(0,img.t()-i-1),i,0);
+                }
             }
 
             // Close the file
