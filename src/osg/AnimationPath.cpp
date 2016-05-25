@@ -155,11 +155,17 @@ AnimationPathCallback::AnimationPathCallback(const osg::Vec3d& pivot,const osg::
 class AnimationPathCallbackVisitor : public NodeVisitor
 {
     public:
-
+        AnimationPathCallbackVisitor() {}
         AnimationPathCallbackVisitor(const AnimationPath::ControlPoint& cp, const osg::Vec3d& pivotPoint, bool useInverseMatrix):
             _cp(cp),
             _pivotPoint(pivotPoint),
             _useInverseMatrix(useInverseMatrix) {}
+
+        void set(const AnimationPath::ControlPoint& cp, const osg::Vec3d& pivotPoint, bool useInverseMatrix) {
+            _cp = cp;
+            _pivotPoint = pivotPoint;
+            _useInverseMatrix = useInverseMatrix;
+        }
 
         virtual void apply(Camera& camera)
         {
@@ -260,8 +266,12 @@ void AnimationPathCallback::update(osg::Node& node)
     AnimationPath::ControlPoint cp;
     if (_animationPath->getInterpolatedControlPoint(getAnimationTime(),cp))
     {
-        AnimationPathCallbackVisitor apcv(cp,_pivotPoint,_useInverseMatrix);
-        node.accept(apcv);
+        if (_myAnimationPathCallbackVisitor.valid()) 
+            ((AnimationPathCallbackVisitor *)_myAnimationPathCallbackVisitor.get())->set(cp, _pivotPoint, _useInverseMatrix);
+        else
+            _myAnimationPathCallbackVisitor = new AnimationPathCallbackVisitor(cp,_pivotPoint,_useInverseMatrix);
+
+        node.accept(*_myAnimationPathCallbackVisitor.get());
     }
 }
 
