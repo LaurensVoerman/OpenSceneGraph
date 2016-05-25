@@ -139,7 +139,7 @@ State::~State()
     // delete the GLExtensions object associated with this osg::State.
     if (_glExtensions)
     {
-        GLExtensions::Set(_contextID, 0);
+//        GLExtensions::Set(_contextID, 0);
         _glExtensions = 0;
     }
 
