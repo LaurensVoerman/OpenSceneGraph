@@ -275,11 +275,17 @@ ImagePager::ImagePager():
     _imageThreads.push_back(new ImageThread(this, ImageThread::HANDLE_ALL_REQUESTS, "Image Thread 1"));
     _imageThreads.push_back(new ImageThread(this, ImageThread::HANDLE_ALL_REQUESTS, "Image Thread 2"));
     _imageThreads.push_back(new ImageThread(this, ImageThread::HANDLE_ALL_REQUESTS, "Image Thread 3"));
-#if 0
+    const char *ptr = 0;
+    int threadMult = 0;
+    if( (ptr = getenv("OSG_IPDT")) != 0)
+    {
+        threadMult = osg::asciiToFloat(ptr);
+    }
+    for (int i = 0; i< threadMult;++i) {
     _imageThreads.push_back(new ImageThread(this, ImageThread::HANDLE_ALL_REQUESTS, "Image Thread 4"));
     _imageThreads.push_back(new ImageThread(this, ImageThread::HANDLE_ALL_REQUESTS, "Image Thread 5"));
     _imageThreads.push_back(new ImageThread(this, ImageThread::HANDLE_ALL_REQUESTS, "Image Thread 6"));
-#endif
+    }
     // 1 second
     _preLoadTime = 1.0;
 }
