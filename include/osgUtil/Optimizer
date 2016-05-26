@@ -682,7 +682,7 @@ class OSGUTIL_EXPORT Optimizer
             const osg::Image* getSourceImage(unsigned int i) { return _sourceList[i]->_image.get(); }
             const osg::Texture2D* getSourceTexture(unsigned int i) { return _sourceList[i]->_texture.get(); }
 
-            void buildAtlas();
+            bool buildAtlas(std::string &baseName);
             osg::Image* getImageAtlas(unsigned int i);
             osg::Texture2D* getTextureAtlas(unsigned int i);
             osg::Matrix getTextureMatrix(unsigned int i);
@@ -768,6 +768,7 @@ class OSGUTIL_EXPORT Optimizer
                     FITS_IN_CURRENT_ROW,
                     IN_NEXT_ROW
                 };
+                bool doesSourceMatch(const Source* source);
                 FitsIn doesSourceFit(Source* source);
                 bool addSource(Source* source);
                 void clampToNearestPowerOfTwoSize();
@@ -789,6 +790,9 @@ class OSGUTIL_EXPORT Optimizer
                 {
                     bool operator()(osg::ref_ptr<Source> src1, osg::ref_ptr<Source> src2) const
                     {
+                        if (src1->_image->t() == src2->_image->t()) {
+                            return src1->_image->s() > src2->_image->s();
+                        }
                         return src1->_image->t() > src2->_image->t();
                     }
                 };
@@ -813,11 +817,13 @@ class OSGUTIL_EXPORT Optimizer
                 /** empty visitor, make it ready for next traversal.*/
                 virtual void reset();
 
+                virtual void setBasename(osg::Node& node);
+
                 virtual void apply(osg::Node& node);
 
                 virtual void apply(osg::Geode& geode);
 
-                void optimize();
+                bool optimize();
 
             protected:
 
@@ -834,6 +840,7 @@ class OSGUTIL_EXPORT Optimizer
                 StateSetMap     _statesetMap;
                 StateSetStack   _statesetStack;
                 Textures        _textures;
+                std::string     _baseName;
 
         };
 

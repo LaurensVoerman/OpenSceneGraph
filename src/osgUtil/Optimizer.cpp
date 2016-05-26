@@ -31,6 +31,7 @@
 #include <osg/PagedLOD>
 #include <osg/ProxyNode>
 #include <osg/ImageStream>
+#include <osg/ImageUtils>
 #include <osg/Timer>
 #include <osg/TexMat>
 #include <osg/io_utils>
@@ -222,7 +223,10 @@ void Optimizer::optimize(osg::Node* node, unsigned int options)
         // traverse the scene collecting textures into texture atlas.
         TextureAtlasVisitor tav(this);
         node->accept(tav);
-        tav.optimize();
+        while (tav.optimize()) {
+            tav.reset();
+            node->accept(tav);
+        }
 
         // now merge duplicate state, that may have been introduced by merge textures into texture atlas'
         bool combineDynamicState = false;
@@ -3266,9 +3270,9 @@ void Optimizer::FlattenBillboardVisitor::process()
 ////////////////////////////////////////////////////////////////////////////
 
 Optimizer::TextureAtlasBuilder::TextureAtlasBuilder():
-    _maximumAtlasWidth(2048),
+_maximumAtlasWidth(2048),
     _maximumAtlasHeight(2048),
-    _margin(8)
+    _margin(0)
 {
 }
 
@@ -3321,8 +3325,7 @@ void Optimizer::TextureAtlasBuilder::completeRow(unsigned int indexAtlas)
             if (y_min >= y_max || x_min >= x_max) continue;
 
             Source * source = sitr3->get();
-            if (source->_atlas || atlas->_image->getPixelFormat() != source->_image->getPixelFormat() ||
-                atlas->_image->getDataType() != source->_image->getDataType())
+            if (source->_atlas || !atlas->doesSourceMatch(source))
             {
                 continue;
             }
@@ -3359,8 +3362,7 @@ void Optimizer::TextureAtlasBuilder::completeRow(unsigned int indexAtlas)
             for(SourceList::iterator sitr2 = _sourceList.begin(); sitr2 != _sourceList.end(); ++sitr2)
             {
                 Source * source = sitr2->get();
-                if (source->_atlas || atlas->_image->getPixelFormat() != source->_image->getPixelFormat() ||
-                    atlas->_image->getDataType() != source->_image->getDataType())
+                if (source->_atlas || !atlas->doesSourceMatch(source))
                 {
                     continue;
                 }
@@ -3392,8 +3394,12 @@ void Optimizer::TextureAtlasBuilder::completeRow(unsigned int indexAtlas)
     }
 }
 
-void Optimizer::TextureAtlasBuilder::buildAtlas()
+bool Optimizer::TextureAtlasBuilder::buildAtlas(std::string &baseName)
 {
+    bool atlasNPOT = false;
+    if (const char* osgAtlasNPOT = getenv("OSG_ATLAS_NPOT")) {
+        atlasNPOT = (strcmp(osgAtlasNPOT, "on") == 0 || strcmp(osgAtlasNPOT, "ON") == 0 || strcmp(osgAtlasNPOT, "On") == 0);
+    }
     std::sort(_sourceList.begin(), _sourceList.end(), CompareSrc());        // Sort using the height of images
     _atlasList.clear();
     for(SourceList::iterator sitr = _sourceList.begin();
@@ -3442,7 +3448,7 @@ void Optimizer::TextureAtlasBuilder::buildAtlas()
             }
         }
     }
-
+    bool return_value = false;
     // build the atlas which are suitable for use, and discard the rest.
     AtlasList activeAtlasList;
     for(AtlasList::iterator aitr = _atlasList.begin();
@@ -3456,23 +3462,37 @@ void Optimizer::TextureAtlasBuilder::buildAtlas()
             // no point building an atlas with only one entry
             // so disconnect the source.
             Source * source = atlas->_sourceList[0].get();
+            if (!source->_image->getFileName().empty()) {//image might be rotated - or repeated
+                if ((source->_image->s() == atlas->_width) && (source->_image->t() == atlas->_height))
             source->_atlas = 0;
             atlas->_sourceList.clear();
+
+                OSG_INFO << source->_image->getFileName() << ": no point building an atlas with only one entry." << std::endl;
+            }
         }
 
         if (!(atlas->_sourceList.empty()))
         {
             std::stringstream ostr;
-            ostr<<"atlas_"<<activeAtlasList.size()<<".rgb";
+            ostr << baseName;// "atlas_";
+            if (atlas->_texture->getWrap(osg::Texture2D::WRAP_S) == osg::Texture2D::REPEAT) ostr << "sr";
+            if (atlas->_texture->getWrap(osg::Texture2D::WRAP_S) == osg::Texture2D::MIRROR) ostr << "sm";
+            if (atlas->_texture->getWrap(osg::Texture2D::WRAP_T) == osg::Texture2D::REPEAT) ostr << "tr";
+            if (atlas->_texture->getWrap(osg::Texture2D::WRAP_T) == osg::Texture2D::MIRROR) ostr << "tm";
+            ostr << atlas->_width << "x" << atlas->_height << "_";
+            ostr << activeAtlasList.size() << ".dds";
             atlas->_image->setFileName(ostr.str());
             activeAtlasList.push_back(atlas);
-            atlas->clampToNearestPowerOfTwoSize();
+            if (!atlasNPOT) atlas->clampToNearestPowerOfTwoSize();
             atlas->copySources();
+            //gluScaleImage needs a valid rendering context!
+            //if (!atlasNPOT) atlas->_image->ensureValidSizeForTexturing(osg::maximum(_maximumAtlasWidth, _maximumAtlasHeight));
+            return_value = true;//changes are made
         }
     }
     // keep only the active atlas'
     _atlasList.swap(activeAtlasList);
-
+    return return_value;
 }
 
 osg::Image* Optimizer::TextureAtlasBuilder::getImageAtlas(unsigned int i)
@@ -3573,17 +3593,18 @@ bool Optimizer::TextureAtlasBuilder::Source::suitableForAtlas(int maximumAtlasWi
         case(GL_COMPRESSED_LUMINANCE_ARB):
         case(GL_COMPRESSED_RGBA_ARB):
         case(GL_COMPRESSED_RGB_ARB):
-        case(GL_COMPRESSED_RGB_S3TC_DXT1_EXT):
-        case(GL_COMPRESSED_RGBA_S3TC_DXT1_EXT):
-        case(GL_COMPRESSED_RGBA_S3TC_DXT3_EXT):
-        case(GL_COMPRESSED_RGBA_S3TC_DXT5_EXT):
             // can't handle compressed textures inside an atlas
             return false;
+        case(GL_COMPRESSED_RGB_S3TC_DXT1_EXT) :
+        case(GL_COMPRESSED_RGBA_S3TC_DXT1_EXT) :
+        case(GL_COMPRESSED_RGBA_S3TC_DXT3_EXT) :
+        case(GL_COMPRESSED_RGBA_S3TC_DXT5_EXT) :
+           if (margin != 0) return false; //cannot fill margins yet!
         default:
             break;
     }
 
-    if ((_image->getPixelSizeInBits() % 8) != 0)
+    if (((_image->getPixelSizeInBits() % 8) != 0) && !_image->isCompressed())
     {
         // pixel size not byte aligned so report as not suitable to prevent other atlas code from having problems with byte boundaries.
         return false;
@@ -3594,16 +3615,14 @@ bool Optimizer::TextureAtlasBuilder::Source::suitableForAtlas(int maximumAtlasWi
         if (_texture->getWrap(osg::Texture2D::WRAP_S)==osg::Texture2D::REPEAT ||
             _texture->getWrap(osg::Texture2D::WRAP_S)==osg::Texture2D::MIRROR)
         {
-            // can't support repeating textures in texture atlas
-            return false;
-        }
-
         if (_texture->getWrap(osg::Texture2D::WRAP_T)==osg::Texture2D::REPEAT ||
             _texture->getWrap(osg::Texture2D::WRAP_T)==osg::Texture2D::MIRROR)
         {
             // can't support repeating textures in texture atlas
             return false;
         }
+        }
+
 
         if (_texture->getReadPBuffer()!=0)
         {
@@ -3626,127 +3645,170 @@ osg::Matrix Optimizer::TextureAtlasBuilder::Source::computeTextureMatrix() const
            osg::Matrix::translate(Float(_x)/Float(_atlas->_image->s()), Float(_y)/Float(_atlas->_image->t()), 0.0);
 }
 
-Optimizer::TextureAtlasBuilder::Atlas::FitsIn Optimizer::TextureAtlasBuilder::Atlas::doesSourceFit(Source* source)
+bool Optimizer::TextureAtlasBuilder::Atlas::doesSourceMatch(const Source* source)
 {
     // does the source have a valid image?
     const osg::Image* sourceImage = source->_image.get();
-    if (!sourceImage) return DOES_NOT_FIT_IN_ANY_ROW;
-
+    if (!sourceImage) return false;
+    const osg::Texture2D* sourceTexture = source->_texture.get();
     // does pixel format match?
     if (_image.valid())
     {
-        if (_image->getPixelFormat() != sourceImage->getPixelFormat()) return DOES_NOT_FIT_IN_ANY_ROW;
-        if (_image->getDataType() != sourceImage->getDataType()) return DOES_NOT_FIT_IN_ANY_ROW;
+        if (_image->getPixelFormat() != sourceImage->getPixelFormat()) return false;
+        if (_image->getDataType() != sourceImage->getDataType()) return false;
     }
 
-    const osg::Texture2D* sourceTexture = source->_texture.get();
+    bool repeatOrMirrorS = false;
+    bool repeatOrMirrorT = false;
+
     if (sourceTexture)
     {
-        if (sourceTexture->getWrap(osg::Texture2D::WRAP_S)==osg::Texture2D::REPEAT ||
-            sourceTexture->getWrap(osg::Texture2D::WRAP_S)==osg::Texture2D::MIRROR)
-        {
+        repeatOrMirrorS = sourceTexture->getWrap(osg::Texture2D::WRAP_S) == osg::Texture2D::REPEAT ||
+            sourceTexture->getWrap(osg::Texture2D::WRAP_S) == osg::Texture2D::MIRROR;
+        repeatOrMirrorT = sourceTexture->getWrap(osg::Texture2D::WRAP_T) == osg::Texture2D::REPEAT ||
+            sourceTexture->getWrap(osg::Texture2D::WRAP_T) == osg::Texture2D::MIRROR;
+
+        if (repeatOrMirrorS && repeatOrMirrorT) {
             // can't support repeating textures in texture atlas
-            return DOES_NOT_FIT_IN_ANY_ROW;
+            return false;
         }
 
-        if (sourceTexture->getWrap(osg::Texture2D::WRAP_T)==osg::Texture2D::REPEAT ||
-            sourceTexture->getWrap(osg::Texture2D::WRAP_T)==osg::Texture2D::MIRROR)
-        {
-            // can't support repeating textures in texture atlas
-            return DOES_NOT_FIT_IN_ANY_ROW;
-        }
-
-        if (sourceTexture->getReadPBuffer()!=0)
+        if (sourceTexture->getReadPBuffer() != 0)
         {
             // pbuffer textures not suitable
-            return DOES_NOT_FIT_IN_ANY_ROW;
+            return false;
         }
 
         if (_texture.valid())
         {
+            if (sourceTexture->getWrap(osg::Texture2D::WRAP_S) == osg::Texture2D::REPEAT ||
+                sourceTexture->getWrap(osg::Texture2D::WRAP_S) == osg::Texture2D::MIRROR)
+            {
+                if (sourceTexture->getWrap(osg::Texture2D::WRAP_S) != _texture->getWrap(osg::Texture2D::WRAP_S))
+                    return false; // wrapping different
+                if (sourceImage->s() != _width)
+                    return false; // wrapping; different width
+            }
 
-            bool sourceUsesBorder = sourceTexture->getWrap(osg::Texture2D::WRAP_S)==osg::Texture2D::CLAMP_TO_BORDER ||
-                                    sourceTexture->getWrap(osg::Texture2D::WRAP_T)==osg::Texture2D::CLAMP_TO_BORDER;
+            if (sourceTexture->getWrap(osg::Texture2D::WRAP_T) == osg::Texture2D::REPEAT ||
+                sourceTexture->getWrap(osg::Texture2D::WRAP_T) == osg::Texture2D::MIRROR)
+            {
+                if (sourceTexture->getWrap(osg::Texture2D::WRAP_T) != _texture->getWrap(osg::Texture2D::WRAP_T))
+                    return false; // wrapping different
+                if (sourceImage->t() != _height)
+                    return false; // wrapping; different height
+            }
 
-            bool atlasUsesBorder = sourceTexture->getWrap(osg::Texture2D::WRAP_S)==osg::Texture2D::CLAMP_TO_BORDER ||
-                                   sourceTexture->getWrap(osg::Texture2D::WRAP_T)==osg::Texture2D::CLAMP_TO_BORDER;
+            bool sourceUsesBorder = sourceTexture->getWrap(osg::Texture2D::WRAP_S) == osg::Texture2D::CLAMP_TO_BORDER ||
+                sourceTexture->getWrap(osg::Texture2D::WRAP_T) == osg::Texture2D::CLAMP_TO_BORDER;
 
-            if (sourceUsesBorder!=atlasUsesBorder)
+            bool atlasUsesBorder = _texture->getWrap(osg::Texture2D::WRAP_S) == osg::Texture2D::CLAMP_TO_BORDER ||
+                _texture->getWrap(osg::Texture2D::WRAP_T) == osg::Texture2D::CLAMP_TO_BORDER;
+
+            if (sourceUsesBorder != atlasUsesBorder)
             {
                 // border wrapping does not match
-                return DOES_NOT_FIT_IN_ANY_ROW;
+                return false;
             }
 
             if (sourceUsesBorder)
             {
                 // border colours don't match
-                if (_texture->getBorderColor() != sourceTexture->getBorderColor()) return DOES_NOT_FIT_IN_ANY_ROW;
+                if (_texture->getBorderColor() != sourceTexture->getBorderColor()) return false;
             }
 
             if (_texture->getFilter(osg::Texture2D::MIN_FILTER) != sourceTexture->getFilter(osg::Texture2D::MIN_FILTER))
             {
                 // inconsitent min filters
-                return DOES_NOT_FIT_IN_ANY_ROW;
+                return false;
             }
 
             if (_texture->getFilter(osg::Texture2D::MAG_FILTER) != sourceTexture->getFilter(osg::Texture2D::MAG_FILTER))
             {
                 // inconsitent mag filters
-                return DOES_NOT_FIT_IN_ANY_ROW;
+                return false;
             }
 
             if (_texture->getMaxAnisotropy() != sourceTexture->getMaxAnisotropy())
             {
                 // anisotropy different.
-                return DOES_NOT_FIT_IN_ANY_ROW;
+                return false;
             }
 
             if (_texture->getInternalFormat() != sourceTexture->getInternalFormat())
             {
                 // internal formats inconistent
-                return DOES_NOT_FIT_IN_ANY_ROW;
+                return false;
             }
 
             if (_texture->getShadowCompareFunc() != sourceTexture->getShadowCompareFunc())
             {
                 // shadow functions inconsitent
-                return DOES_NOT_FIT_IN_ANY_ROW;
+                return false;
             }
 
             if (_texture->getShadowTextureMode() != sourceTexture->getShadowTextureMode())
             {
                 // shadow texture mode inconsitent
-                return DOES_NOT_FIT_IN_ANY_ROW;
+                return false;
             }
 
             if (_texture->getShadowAmbient() != sourceTexture->getShadowAmbient())
             {
                 // shadow ambient inconsitent
-                return DOES_NOT_FIT_IN_ANY_ROW;
+                return false;
             }
         }
     }
+    if (_width != 0 && repeatOrMirrorS && sourceImage->s() != _width) return false;
+    if (_height != 0 && repeatOrMirrorT && sourceImage->t() != _height) return false;
+    return true;
+}
+Optimizer::TextureAtlasBuilder::Atlas::FitsIn Optimizer::TextureAtlasBuilder::Atlas::doesSourceFit(Source* source)
+{
+    if (!doesSourceMatch(source)) return DOES_NOT_FIT_IN_ANY_ROW;
+    const osg::Image* sourceImage = source->_image.get();
+    const osg::Texture2D* sourceTexture = source->_texture.get();
+    bool repeatOrMirrorS = false;
+    bool repeatOrMirrorT = false;
+    if (sourceTexture)
+    {
+        repeatOrMirrorS = sourceTexture->getWrap(osg::Texture2D::WRAP_S) == osg::Texture2D::REPEAT ||
+            sourceTexture->getWrap(osg::Texture2D::WRAP_S) == osg::Texture2D::MIRROR;
+        repeatOrMirrorT = sourceTexture->getWrap(osg::Texture2D::WRAP_T) == osg::Texture2D::REPEAT ||
+            sourceTexture->getWrap(osg::Texture2D::WRAP_T) == osg::Texture2D::MIRROR;
+    }
+    if (_texture) {
+        if (sourceTexture->getWrap(osg::Texture2D::WRAP_S) != _texture->getWrap(osg::Texture2D::WRAP_S)) return DOES_NOT_FIT_IN_ANY_ROW;
+        if (sourceTexture->getWrap(osg::Texture2D::WRAP_T) != _texture->getWrap(osg::Texture2D::WRAP_T)) return DOES_NOT_FIT_IN_ANY_ROW;
+    }
 
-    if (sourceImage->s() + 2*_margin > _maximumAtlasWidth)
+    if (repeatOrMirrorS && (_width != 0) && (_width != sourceImage->s())) return DOES_NOT_FIT_IN_ANY_ROW;
+    if (repeatOrMirrorT && (_height != 0) && (_height != sourceImage->t())) return DOES_NOT_FIT_IN_ANY_ROW;
+
+    int marginS = repeatOrMirrorS ? 0 : _margin;
+    int marginT = repeatOrMirrorT ? 0 : _margin;
+
+    if (sourceImage->s() + 2 * marginS > _maximumAtlasWidth)
     {
         // image too big for Atlas
         return DOES_NOT_FIT_IN_ANY_ROW;
     }
 
-    if (sourceImage->t() + 2*_margin > _maximumAtlasHeight)
+    if (sourceImage->t() + 2 * marginT > _maximumAtlasHeight)
     {
         // image too big for Atlas
         return DOES_NOT_FIT_IN_ANY_ROW;
     }
 
-    if ((_y + sourceImage->t() + 2*_margin) > _maximumAtlasHeight)
+    if ((_y + sourceImage->t() + 2 * marginT) > _maximumAtlasHeight)
     {
         // image doesn't have up space in height axis.
         return DOES_NOT_FIT_IN_ANY_ROW;
     }
 
     // does the source fit in the current row?
-    if ((_x + sourceImage->s() + 2*_margin) <= _maximumAtlasWidth)
+    if (!repeatOrMirrorS && ((_x + sourceImage->s() + 2 * marginS) <= _maximumAtlasWidth))
     {
         // yes it fits :-)
         OSG_INFO<<"Fits in current row"<<std::endl;
@@ -3754,7 +3816,7 @@ Optimizer::TextureAtlasBuilder::Atlas::FitsIn Optimizer::TextureAtlasBuilder::At
     }
 
     // does the source fit in the new row up?
-    if ((_height + sourceImage->t() + 2*_margin) <= _maximumAtlasHeight)
+    if (!repeatOrMirrorT && ((_height + sourceImage->t() + 2 * marginT) <= _maximumAtlasHeight))
     {
         // yes it fits :-)
         OSG_INFO<<"Fits in next row"<<std::endl;
@@ -3801,15 +3863,22 @@ bool Optimizer::TextureAtlasBuilder::Atlas::addSource(Source* source)
         _texture->setMaxAnisotropy(sourceTexture->getMaxAnisotropy());
 
         _texture->setInternalFormat(sourceTexture->getInternalFormat());
+        _texture->setInternalFormatMode(osg::Texture::USE_IMAGE_DATA_FORMAT);
 
         _texture->setShadowCompareFunc(sourceTexture->getShadowCompareFunc());
         _texture->setShadowTextureMode(sourceTexture->getShadowTextureMode());
         _texture->setShadowAmbient(sourceTexture->getShadowAmbient());
 
     }
+    bool repeatOrMirrorS = _texture->getWrap(osg::Texture2D::WRAP_S) == osg::Texture2D::REPEAT ||
+        _texture->getWrap(osg::Texture2D::WRAP_S) == osg::Texture2D::MIRROR;
+    bool repeatOrMirrorT = _texture->getWrap(osg::Texture2D::WRAP_T) == osg::Texture2D::REPEAT ||
+        _texture->getWrap(osg::Texture2D::WRAP_T) == osg::Texture2D::MIRROR;
+    int marginS = repeatOrMirrorS ? 0 : _margin;
+    int marginT = repeatOrMirrorT ? 0 : _margin;
 
     // now work out where to fit it, first try current row.
-    if ((_x + sourceImage->s() + 2*_margin) <= _maximumAtlasWidth)
+    if (!repeatOrMirrorS && ((_x + sourceImage->s() + 2 * marginS) <= _maximumAtlasWidth))
     {
         // yes it fits, so add the source to the atlas's list of sources it contains
         _sourceList.push_back(source);
@@ -3817,23 +3886,23 @@ bool Optimizer::TextureAtlasBuilder::Atlas::addSource(Source* source)
         OSG_INFO<<"current row insertion, source "<<source->_image->getFileName()<<" "<<_x<<","<<_y<<" fits in row of atlas "<<this<<std::endl;
 
         // set up the source so it knows where it is in the atlas
-        source->_x = _x + _margin;
-        source->_y = _y + _margin;
+        source->_x = _x + marginS;
+        source->_y = _y + marginT;
         source->_atlas = this;
 
         // move the atlas' cursor along to the right
-        _x += sourceImage->s() + 2*_margin;
+        _x += sourceImage->s() + 2 * marginS;
 
         if (_x > _width) _width = _x;
 
-        int localTop = _y + sourceImage->t() + 2*_margin;
+        int localTop = _y + sourceImage->t() + 2 * marginT;
         if ( localTop > _height) _height = localTop;
 
         return true;
     }
 
     // does the source fit in the new row up?
-    if ((_height + sourceImage->t() + 2*_margin) <= _maximumAtlasHeight)
+    if (!repeatOrMirrorT && ((_height + sourceImage->t() + 2 * marginT) <= _maximumAtlasHeight))
     {
         // now row so first need to reset the atlas cursor
         _x = 0;
@@ -3845,16 +3914,16 @@ bool Optimizer::TextureAtlasBuilder::Atlas::addSource(Source* source)
         OSG_INFO<<"next row insertion, source "<<source->_image->getFileName()<<" "<<_x<<","<<_y<<" fits in row of atlas "<<this<<std::endl;
 
         // set up the source so it knows where it is in the atlas
-        source->_x = _x + _margin;
-        source->_y = _y + _margin;
+        source->_x = _x + marginS;
+        source->_y = _y + marginT;
         source->_atlas = this;
 
         // move the atlas' cursor along to the right
-        _x += sourceImage->s() + 2*_margin;
+        _x += sourceImage->s() + 2 * marginS;
 
         if (_x > _width) _width = _x;
 
-        _height = _y + sourceImage->t() + 2*_margin;
+        _height = _y + sourceImage->t() + 2 * marginT;
 
         OSG_INFO<<"source "<<source->_image->getFileName()<<" "<<_x<<","<<_y<<" fits in row of atlas "<<this<<std::endl;
 
@@ -3869,13 +3938,43 @@ bool Optimizer::TextureAtlasBuilder::Atlas::addSource(Source* source)
 
 void Optimizer::TextureAtlasBuilder::Atlas::clampToNearestPowerOfTwoSize()
 {
+    bool clampS = false;
+    bool clampT = false;
+    if (_texture->getWrap(osg::Texture2D::WRAP_S) == osg::Texture2D::REPEAT) {
+        OSG_INFO << "osg::Texture2D::WRAP_S == osg::Texture2D::REPEAT" << std::endl;
+    } else { 
+        if (_texture->getWrap(osg::Texture2D::WRAP_S) == osg::Texture2D::MIRROR) {
+            OSG_INFO << "osg::Texture2D::WRAP_S == osg::Texture2D::MIRROR" << std::endl;
+        } else {
+            clampS = true;
+        }
+    }
+
+    if (_texture->getWrap(osg::Texture2D::WRAP_T) == osg::Texture2D::REPEAT) {
+        OSG_INFO << "osg::Texture2D::WRAP_T == osg::Texture2D::REPEAT" << std::endl;
+    } else {
+        if (_texture->getWrap(osg::Texture2D::WRAP_T) == osg::Texture2D::MIRROR) {
+            OSG_INFO << "osg::Texture2D::WRAP_T == osg::Texture2D::MIRROR" << std::endl;
+        } else {
+            clampT = true;
+        }
+    }
+
     int w = 1;
-    while (w<_width) w *= 2;
+    if (clampS) {
+        while(w<_width) w *= 2;
+    } else {
+        w = _width;
+    }
 
     int h = 1;
-    while (h<_height) h *= 2;
+    if (clampT) {
+        while (h < _height) h *= 2;
+    } else {
+        h = _height;
+    }
 
-    OSG_INFO<<"Clamping "<<_width<<", "<<_height<<" to "<<w<<","<<h<<std::endl;
+    OSG_INFO << "Clamping " << _width << ", " << _height << " to " << w << "," << h << std::endl;
 
     _width = w;
     _height = h;
@@ -3891,12 +3990,23 @@ void Optimizer::TextureAtlasBuilder::Atlas::copySources()
     _image->allocateImage(_width,_height,1,
                           pixelFormat, dataType,
                           packing);
-
+//    _image->setOrigin(osg::Image::TOP_LEFT);//do not autoFlip dds files
     {
         // clear memory
         unsigned int size = _image->getTotalSizeInBytes();
         unsigned char* str = _image->data();
-        for(unsigned int i=0; i<size; ++i) *(str++) = 0;
+//        for(unsigned int i=0; i<size; ++i) *(str++) = 0;
+        memset(str, 0, size);
+        if (pixelFormat == GL_COMPRESSED_RGB_S3TC_DXT1_EXT || pixelFormat == GL_COMPRESSED_RGBA_S3TC_DXT1_EXT) {
+            unsigned int blocks = size / 8;
+            for (unsigned int block =0; block < blocks; ++block) {
+                *(short *)(&str[8 * block]) = ~0;//color 0 
+                *(short *)(&str[8 * block + 2]) = 0;//color 1 (black)
+                *(int *)(&str[8 * block + 4]) = 0x55555555;//16 pixels using color 1 
+            }
+        } else {
+            memset(str, 0, size);
+        }
     }
 
     OSG_INFO<<"Atlas::copySources() "<<std::endl;
@@ -3931,6 +4041,27 @@ void Optimizer::TextureAtlasBuilder::Atlas::copySources()
             int y = source->_y;
 
             int t;
+            if (sourceImage->isCompressed()) {
+#if 1
+                atlasImage->copySubImage(x, y, 0, sourceImage);
+#else
+                unsigned int blockSize = sourceImage->computeBlockSize(sourceImage->getPixelFormat(), sourceImage->getPacking());
+                for (t = 0; t<(sourceImage->t() +3) /4; ++t, ++y)
+                {
+                    unsigned char* destPtr = atlasImage->data(x, y);
+                    const unsigned char* sourcePtr = sourceImage->data(0, t);
+                    for (unsigned int i = 0; i<(rowSize +3)/4; i++)
+                    {
+                        for (unsigned int p = 0; p<blockSize; p++) 
+                        {
+                            *(destPtr++) = *(sourcePtr++);
+                        }
+                    }
+                }
+#endif
+            }
+            else
+            {
             for(t=0; t<sourceImage->t(); ++t, ++y)
             {
                 unsigned char* destPtr = atlasImage->data(x, y);
@@ -4049,7 +4180,7 @@ void Optimizer::TextureAtlasBuilder::Atlas::copySources()
                     *(destPtr++) = *(sourcePtr++);
                 }
             }
-
+            }
         }
     }
 }
@@ -4111,8 +4242,18 @@ void Optimizer::TextureAtlasVisitor::popStateSet()
     _statesetStack.pop_back();
 }
 
+void Optimizer::TextureAtlasVisitor::setBasename(osg::Node& node)
+{
+    if (_baseName.empty()) {
+        if (!node.getName().empty()) {
+            std::string::size_type dot = node.getName().find_first_of(". \t\r\n\\/");
+            _baseName = node.getName().substr(0, dot);
+        }
+    }
+}
 void Optimizer::TextureAtlasVisitor::apply(osg::Node& node)
 {
+    setBasename(node);
     bool pushedStateState = false;
 
     osg::StateSet* ss = node.getStateSet();
@@ -4132,6 +4273,7 @@ void Optimizer::TextureAtlasVisitor::apply(osg::Node& node)
 
 void Optimizer::TextureAtlasVisitor::apply(osg::Geode& geode)
 {
+    setBasename(geode);
     if (!isOperationPermissibleForObject(&geode)) return;
 
     osg::StateSet* ss = geode.getStateSet();
@@ -4182,18 +4324,19 @@ void Optimizer::TextureAtlasVisitor::apply(osg::Geode& geode)
     if (pushedGeodeStateState) popStateSet();
 }
 
-void Optimizer::TextureAtlasVisitor::optimize()
+bool Optimizer::TextureAtlasVisitor::optimize()
 {
     _builder.reset();
 
     if (_textures.size()<2)
     {
         // nothing to optimize
-        return;
+        return false;
     }
 
     Textures texturesThatRepeat;
-    Textures texturesThatRepeatAndAreOutOfRange;
+    Textures texturesThatRepeatAndAreOutOfRangeS;//set of textures needing S wrap
+    Textures texturesThatRepeatAndAreOutOfRangeT;//set of textures needing T wrap
 
     StateSetMap::iterator sitr;
     for(sitr = _statesetMap.begin();
@@ -4222,11 +4365,11 @@ void Optimizer::TextureAtlasVisitor::optimize()
                     bool s_outOfRange = false;
                     bool t_outOfRange = false;
 
-                    float s_min = -0.001;
-                    float s_max = 1.001;
+                    float s_min = FLT_MAX;
+                    float s_max = FLT_MIN;
 
-                    float t_min = -0.001;
-                    float t_max = 1.001;
+                    float t_min = FLT_MAX;
+                    float t_max = FLT_MIN;
 
                     for(Drawables::iterator ditr = drawables.begin();
                         ditr != drawables.end();
@@ -4236,17 +4379,38 @@ void Optimizer::TextureAtlasVisitor::optimize()
                         osg::Vec2Array* texcoords = geom ? dynamic_cast<osg::Vec2Array*>(geom->getTexCoordArray(unit)) : 0;
                         if (texcoords && !texcoords->empty())
                         {
-                            for(osg::Vec2Array::iterator titr = texcoords->begin();
+                            osg::TexMat *tm = dynamic_cast<osg::TexMat*>(stateset->getTextureAttribute(unit, osg::StateAttribute::TEXMAT));
+                            if (tm) {
+                                osg::Matrix &mat = tm->getMatrix();
+                                for (osg::Vec2Array::iterator titr = texcoords->begin();
                                 titr != texcoords->end() /*&& !s_outOfRange && !t_outOfRange*/;
                                 ++titr)
                             {
                                 osg::Vec2 tc = *titr;
-                                if (tc[0]<s_min) { s_min = tc[0]; s_outOfRange = true; }
-                                if (tc[0]>s_max) { s_max = tc[0]; s_outOfRange = true; }
+                                    float s = mat(0, 0) * tc[0] + mat(1, 0) * tc[1] + mat(3, 0);
+                                    float t = mat(0, 1) * tc[0] + mat(1, 1) * tc[1] + mat(3, 1);
+                                    if (s<s_min) { s_min = s; }
+                                    if (s>s_max) { s_max = s; }
 
-                                if (tc[1]<t_min) { t_min = tc[1]; t_outOfRange = true; }
-                                if (tc[1]>t_max) { t_max = tc[1]; t_outOfRange = true; }
+                                    if (t<t_min) { t_min = t; }
+                                    if (t>t_max) { t_max = t; }
                             }
+                        }
+                            else {
+                                for (osg::Vec2Array::iterator titr = texcoords->begin();
+                                    titr != texcoords->end() /*&& !s_outOfRange && !t_outOfRange*/;
+                                    ++titr)
+                                {
+                                    osg::Vec2 tc = *titr;
+                                    if (tc[0]<s_min) { s_min = tc[0]; }
+                                    if (tc[0]>s_max) { s_max = tc[0]; }
+
+                                    if (tc[1]<t_min) { t_min = tc[1]; }
+                                    if (tc[1]>t_max) { t_max = tc[1]; }
+                                }
+                            }
+                            s_outOfRange = s_min < -0.001 || s_max > 1.001;
+                            t_outOfRange = t_min < -0.001 || t_max > 1.001;
                         }
                         else
                         {
@@ -4255,13 +4419,175 @@ void Optimizer::TextureAtlasVisitor::optimize()
                             t_outOfRange = true;
                         }
                     }
+                    bool repeat_s = false; 
+                    bool repeat_t = false;
+                    osg::ref_ptr<osg::Image> img = texture->getImage();
+                    if (img) {
+//                        if (!t_outOfRange && s_outOfRange && (s_min != FLT_MAX)) //do not combine with atlas of repeating textures
+//                            repeat_s = true;
+//                        if (!s_outOfRange && t_outOfRange && (t_min != FLT_MAX))
+//                            repeat_t = true;
 
+                        //mind the overflow: 2^9 x 2^9 *3 *64k > 2^31 !
+                        //                        int extraBytesLimit = 256 * 256;//64 K pixels
+                        //                        int extraBytesLimit2 = 16 * 128;//2 K pixels - unwrap very small pics in both directions
+                        int extraPixelsLimit = 256 * 256;//64 K pixels
+                        int extraPixelsLimit2 = 16 * 128;//2 K pixels - unwrap very small pics in both directions
+                        int totalSizeInPixels = img->getTotalSizeInBytes() * 8 / img->getPixelSizeInBits();
+                        int extraCopyLimit = extraPixelsLimit / totalSizeInPixels;//64 K pixels
+                        int extraCopyLimit2 = extraPixelsLimit2 / totalSizeInPixels;//2 K pixels - unwrap very small pics in both directions
+
+#if 1
+                        int s_mini = (int)floorf(s_min);
+                        int s_maxi = (int)ceilf(s_max);
+                        float s_width = s_max - s_min;
+                        int s_width_i = s_maxi - s_mini;
+                        int t_mini = (int)floorf(t_min);
+                        int t_maxi = (int)ceilf(t_max);
+                        float t_width = t_max - t_min;
+                        int t_width_i = t_maxi - t_mini;
+                    
+                        if (s_outOfRange && t_outOfRange) {
+                            //try to wrap in only one direction:
+                            if (s_width_i < t_width_i) {
+                                bool tooBig = (s_width_i - 1.0f) > extraCopyLimit;
+                                if (!tooBig) repeat_s = true;
+                            } else {
+                                bool tooBig = (t_width_i - 1.0f) > extraCopyLimit;
+                                if (!tooBig) repeat_t = true;
+                            }
+                        }
+                        if (s_outOfRange || t_outOfRange) {
+                            bool tooBig = (s_width_i - 1.0f) * (t_width_i - 1.0f) > extraCopyLimit2;
+                            if (!tooBig) {
+                                repeat_s = s_outOfRange;
+                                repeat_t = t_outOfRange;
+                            }
+                        }
+                        if (s_min == FLT_MAX) repeat_s = false;
+                        if (t_min == FLT_MAX) repeat_t = false;
+#endif
+                        if (repeat_s)
+                        {
+                            bool tooBig = (s_width_i - 1.0f) > extraCopyLimit;
+                            if (!tooBig) {
+                                osg::Image *newImg = new osg::Image();
+
+                                newImg->allocateImage(s_width_i * img->s(), img->t(), 1, img->getPixelFormat(), img->getDataType(), img->getPacking());
+                                for (int i = 0; i< s_width_i; ++i) {
+                                    newImg->copySubImage(img->s() * i, 0, 0, img);
+                                }
+                                texture->setImage(newImg);
+                                osg::TexMat *tm = dynamic_cast<osg::TexMat*>(stateset->getTextureAttribute(unit, osg::StateAttribute::TEXMAT));
+                                osg::Matrix matrix = osg::Matrix::scale(1.0f / (float)s_width_i, 1.0f, 1.0f)*
+                                    osg::Matrix::translate((float)(-s_mini) / (float)s_width_i, 0.0f, 0.0f);
+                                if (tm) {
+                                    if (tm) matrix = tm->getMatrix() * matrix;
+                                }
+                                stateset->setTextureAttribute(unit, new osg::TexMat(matrix));
+                                s_outOfRange = false;
+                                texture->setWrap(osg::Texture2D::WRAP_S, osg::Texture2D::CLAMP_TO_EDGE);
+                            }
+                            if (tooBig)    {
+                                OSG_NOTICE << "Not wrapping texture in atlas: " << s_width << " s: ->" << s_width_i << " s: " << (s_width_i - 1.0f) * totalSizeInPixels << "extra Pixels. > Limit " << extraPixelsLimit << std::endl;
+                            } else {
+                                OSG_NOTICE << "wrapping texture in atlas: " << s_width << " s: ->" << s_width_i << " s: " << (s_width_i - 1.0f) * totalSizeInPixels << "extra Pixels. <= Limit " << extraPixelsLimit << std::endl;
+                            }
+                            if (!img->getFileName().empty()) OSG_NOTICE << "filename:" << img->getFileName() << std::endl;
+                            else if (!img->getName().empty()) OSG_NOTICE << "name:" << img->getName() << std::endl;
+                            else OSG_NOTICE << "nameless image:" << img->getName() << std::endl;
+
+                            img = texture->getImage();
+                            
+
+                        }
+                        if (repeat_t)
+                        {
+                            bool tooBig = (t_width_i - 1.0f) > extraCopyLimit;
+                            if (!tooBig) {
+                                osg::Image *newImg = new osg::Image();
+
+                                newImg->allocateImage(img->s(), t_width_i * img->t(), 1, img->getPixelFormat(), img->getDataType(), img->getPacking());
+                                for (int i = 0; i< t_width_i; ++i) {
+                                    newImg->copySubImage(0, img->t() * i, 0, img);
+                                }
+                                texture->setImage(newImg);
+                                osg::TexMat *tm = dynamic_cast<osg::TexMat*>(stateset->getTextureAttribute(unit, osg::StateAttribute::TEXMAT));
+                                osg::Matrix matrix = osg::Matrix::scale(1.0f, 1.0f / (float)t_width_i, 1.0f)*
+                                    osg::Matrix::translate(0.0f, (float)(-t_mini) / (float)t_width_i, 0.0f);
+                                if (tm) {
+                                    if (tm) matrix = tm->getMatrix() * matrix;
+                                }
+                                stateset->setTextureAttribute(unit, new osg::TexMat(matrix));
+                                t_outOfRange = false;
+                                texture->setWrap(osg::Texture2D::WRAP_T, osg::Texture2D::CLAMP_TO_EDGE);
+                            }
+                            if (tooBig)    {
+                                OSG_NOTICE << "Not (t) wrapping texture in atlas: " << t_width << " t: ->" << t_width_i << " t: " << (t_width_i - 1.0f) * totalSizeInPixels << "extra Pixels. > Limit " << extraPixelsLimit << std::endl;
+                            } else {
+                                OSG_NOTICE << "wrapping (t) texture in atlas: " << t_width << " t: ->" << t_width_i << " t: " << (t_width_i - 1.0f) * totalSizeInPixels << "extra Pixels. <= Limit " << extraPixelsLimit << std::endl;
+                            }
+                            if (!img->getFileName().empty()) OSG_NOTICE << "filename:" << img->getFileName() << std::endl;
+                            else if (!img->getName().empty()) OSG_NOTICE << "name:" << img->getName() << std::endl;
+                            else OSG_NOTICE << "nameless image:" << img->getName() << std::endl;
+                        }
+                        if ((!s_outOfRange && t_outOfRange) || (!s_outOfRange && !t_outOfRange && (img->t() > img->s()) )) {
+                            //if t out of range: rotate the image 
+                            // or if both in range and height largen than width
+                            osg::Image *newImg = osg::createImageWithOrientationConversion(img.get(),
+                                osg::Vec3i(img->s() - 1, 0, 0),
+                                osg::Vec3i(0, img->t(), 0),
+                                osg::Vec3i(-img->s(), 0, 0),
+                                osg::Vec3i(0, 0, 1));
+                            texture->setImage(newImg);
+                            if (t_outOfRange) {
+                                texture->setWrap(osg::Texture2D::WRAP_S, texture->getWrap(osg::Texture2D::WRAP_T));
+                            }
+                            osg::TexMat *tm = dynamic_cast<osg::TexMat*>(stateset->getTextureAttribute(unit, osg::StateAttribute::TEXMAT));
+    //                        osg::Matrix matrix(0.0, 1.0, 0.0, 0.0, -1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0);//CCW
+                            osg::Matrix matrix(0.0, -1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0);//rotate Clockwise
+                            if (tm) matrix = tm->getMatrix() * matrix;
+                            stateset->setTextureAttribute(unit, new osg::TexMat(matrix));
+                            bool temp = s_outOfRange;
+                            s_outOfRange = t_outOfRange;
+                            t_outOfRange = temp;
+                            temp = repeat_s;
+                            repeat_s = repeat_t;
+                            repeat_t = temp;
+                        }
                     if (s_outOfRange || t_outOfRange)
                     {
-                        texturesThatRepeatAndAreOutOfRange.insert(texture);
+                            if (s_outOfRange) texturesThatRepeatAndAreOutOfRangeS.insert(texture);
+                            if (t_outOfRange) texturesThatRepeatAndAreOutOfRangeT.insert(texture);
+                            if (s_outOfRange && t_outOfRange)
+                                OSG_NOTICE << "Can't use repeating texture in atlas:" << std::endl;
+                            if (s_outOfRange || repeat_s) OSG_NOTICE << "texture s_min " << s_min << std::endl << "texture s_max " << s_max << std::endl;
+                            if (t_outOfRange || repeat_t) OSG_NOTICE << "texture t_min " << t_min << std::endl << "texture t_max " << t_max << std::endl;
+                        }
+                    }// if (img)
+                    else
+                    {
+                        texturesThatRepeatAndAreOutOfRangeS.insert(texture);
+                        texturesThatRepeatAndAreOutOfRangeT.insert(texture);
+                        OSG_NOTICE << "Can't use missing texture in atlas:" << std::endl;
                     }
 
                 }
+                {
+                    if (osg::Image *img = texture->getImage()) {
+                        OSG_NOTICE << "size : " << img->s() << " x " << img->t() << std::endl;
+                        if (img->computeNumComponents(img->getPixelFormat()) == 4) {
+                            if (img->isImageTranslucent()) OSG_NOTICE << "Translucent Image" << std::endl;
+                            else OSG_NOTICE << "NON Translucent Image with 4 components" << std::endl;
+                        }
+                        OSG_NOTICE << "pixelFormat = " << std::hex << img->getPixelFormat() << std::dec << std::endl;
+                        if (!img->getFileName().empty()) OSG_NOTICE << "filename:" << img->getFileName() << std::endl;
+                        else if (!img->getName().empty()) OSG_NOTICE << "name:" << img->getName() << std::endl;
+                        else OSG_NOTICE << "nameless image:" << img->getName() << std::endl;
+                    }
+                    OSG_NOTICE << "--------" << std::endl;
+                }
+
             }
         }
     }
@@ -4275,11 +4601,12 @@ void Optimizer::TextureAtlasVisitor::optimize()
         ++titr)
     {
         osg::Texture2D* texture = *titr;
-        if (texturesThatRepeatAndAreOutOfRange.count(texture)==0)
-        {
-            // safe to convert into CLAMP wrap mode.
-            OSG_INFO<<"Changing wrap mode to CLAMP"<<std::endl;
+        if (texturesThatRepeatAndAreOutOfRangeS.count(texture) == 0) {
+            OSG_INFO << "Changing wrap mode S to CLAMP" << std::endl;
             texture->setWrap(osg::Texture2D::WRAP_S, osg::Texture::CLAMP_TO_EDGE);
+        }            
+        if (texturesThatRepeatAndAreOutOfRangeT.count(texture) == 0) {
+            OSG_INFO << "Changing wrap mode T to CLAMP" << std::endl;
             texture->setWrap(osg::Texture2D::WRAP_T, osg::Texture::CLAMP_TO_EDGE);
         }
     }
@@ -4298,13 +4625,13 @@ void Optimizer::TextureAtlasVisitor::optimize()
         bool t_repeat = texture->getWrap(osg::Texture2D::WRAP_T)==osg::Texture2D::REPEAT ||
                         texture->getWrap(osg::Texture2D::WRAP_T)==osg::Texture2D::MIRROR;
 
-        if (texture->getImage() && !s_repeat && !t_repeat)
+        if (texture->getImage() && (!s_repeat || !t_repeat))
         {
             _builder.addSource(*titr);
         }
     }
 
-    _builder.buildAtlas();
+    bool return_value = _builder.buildAtlas(_baseName);//still could flatten some texure matrices
 
 
     typedef std::set<osg::StateSet*> StateSetSet;
@@ -4385,13 +4712,14 @@ void Optimizer::TextureAtlasVisitor::optimize()
                 osg::Texture2D* newTexture = _builder.getTextureAtlas(texture);
                 if (newTexture && newTexture!=texture)
                 {
-                    if (s_repeat || t_repeat)
+                    if (s_repeat && t_repeat)
                     {
                         OSG_NOTICE<<"Warning!!! shouldn't get here"<<std::endl;
                     }
 
                     stateset->setTextureAttribute(unit, newTexture);
-
+                }
+                {//flatten texture matrices if possible
                     Drawables& drawables = sitr->second;
 
                     osg::Matrix matrix = _builder.getTextureMatrix(texture);
@@ -4418,6 +4746,11 @@ void Optimizer::TextureAtlasVisitor::optimize()
 
                     if (canTexMatBeFlattenedToAllDrawables)
                     {
+                        osg::StateAttribute *tmsa = stateset->getTextureAttribute(unit, osg::StateAttribute::TEXMAT);
+                        osg::TexMat *tm = dynamic_cast<osg::TexMat*>(tmsa);
+                        if (tm) matrix = tm->getMatrix() * matrix;
+                        stateset->removeTextureAttribute(unit, osg::StateAttribute::TEXMAT);
+                        if (!matrix.isIdentity()) {
                         // OSG_NOTICE<<"All drawables can be flattened "<<drawables.size()<<std::endl;
                         for(Drawables::iterator ditr = drawables.begin();
                             ditr != drawables.end();
@@ -4425,8 +4758,9 @@ void Optimizer::TextureAtlasVisitor::optimize()
                         {
                             osg::Geometry* geom = (*ditr)->asGeometry();
                             osg::Vec2Array* texcoords = geom ? dynamic_cast<osg::Vec2Array*>(geom->getTexCoordArray(unit)) : 0;
-                            if (texcoords)
+                                if (texcoords && texcoords->size())
                             {
+                                    if (!return_value) return_value = true;
                                 for(osg::Vec2Array::iterator titr = texcoords->begin();
                                     titr != texcoords->end();
                                     ++titr)
@@ -4442,8 +4776,12 @@ void Optimizer::TextureAtlasVisitor::optimize()
                             }
                         }
                     }
+                    }
                     else
                     {
+                        osg::StateAttribute *tmsa = stateset->getTextureAttribute(unit, osg::StateAttribute::TEXMAT);
+                        osg::TexMat *tm = dynamic_cast<osg::TexMat*>(tmsa);
+                        if (tm) matrix = tm->getMatrix() * matrix;
                         // OSG_NOTICE<<"Applying TexMat "<<drawables.size()<<std::endl;
                         stateset->setTextureAttribute(unit, new osg::TexMat(matrix));
                     }
@@ -4452,6 +4790,7 @@ void Optimizer::TextureAtlasVisitor::optimize()
         }
 
     }
+    return return_value;
 }
 
 
