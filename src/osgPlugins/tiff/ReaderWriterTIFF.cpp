@@ -522,7 +522,7 @@ simage_tiff_load(std::istream& fin,
     unsigned char *buffer;
     int width;
 	int height;
-	int depth;
+	unsigned int depth;
 	unsigned char *currPtr;
 
     TIFFSetErrorHandler(tiff_error);
