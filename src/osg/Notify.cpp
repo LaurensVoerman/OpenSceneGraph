@@ -176,6 +176,7 @@ struct NotifySingleton
     osg::NotifySeverity _notifyLevel;
     osg::NullStream     _nullStream;
     osg::NotifyStream   _notifyStream;
+	mutable OpenThreads::Mutex  _notifyMutex;
 };
 
 static NotifySingleton& getNotifySingleton()
@@ -256,3 +257,23 @@ void osg::WinDebugNotifyHandler::notify(osg::NotifySeverity severity, const char
 }
 
 #endif
+
+
+osg::notifyScopeMutexLock::notifyScopeMutexLock() : _locked(false) {
+    getNotifySingleton()._notifyMutex.lock();
+    _locked = true;
+}
+osg::notifyScopeMutexLock::~notifyScopeMutexLock() {
+    if (_locked)
+        getNotifySingleton()._notifyMutex.unlock();
+}
+void
+osg::notifyScopeMutexLock::unlock() {
+    if (_locked)
+        getNotifySingleton()._notifyMutex.unlock();
+    _locked = false;
+}
+bool
+osg::notifyScopeMutexLock::locked() {
+    return _locked;
+}
