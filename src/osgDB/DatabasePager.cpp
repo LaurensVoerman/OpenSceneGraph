@@ -643,6 +643,9 @@ DatabasePager::DatabaseThread::DatabaseThread(DatabasePager* pager, Mode mode, c
     _mode(mode),
     _name(name)
 {
+#ifdef OPENTHREADS_THREAD_NAME
+	setThreadName(name.c_str());
+#endif
 }
 
 DatabasePager::DatabaseThread::DatabaseThread(const DatabaseThread& dt, DatabasePager* pager):

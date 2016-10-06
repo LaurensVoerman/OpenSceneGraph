@@ -101,7 +101,11 @@ class OSGDB_EXPORT DatabasePager : public osg::NodeVisitor::DatabaseRequestHandl
 
             DatabaseThread(const DatabaseThread& dt, DatabasePager* pager);
 
+#ifdef OPENTHREADS_THREAD_NAME
+			void setName(const std::string& name) { _name = name; setThreadName(_name.c_str()); }
+#else
             void setName(const std::string& name) { _name = name; }
+#endif
             const std::string& getName() const { return _name; }
 
             void setDone(bool done) { _done.exchange(done?1:0); }

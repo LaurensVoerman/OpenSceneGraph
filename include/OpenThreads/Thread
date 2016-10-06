@@ -20,6 +20,8 @@
 #ifndef _OPENTHREADS_THREAD_
 #define _OPENTHREADS_THREAD_
 
+#define OPENTHREADS_THREAD_NAME 1
+
 #include <sys/types.h>
 
 #include <OpenThreads/Mutex>
@@ -348,6 +350,13 @@ public:
       * detailed description.
       */
     static int microSleep( unsigned int microsec);
+
+#ifdef OPENTHREADS_THREAD_NAME
+	/** setName method,
+	*  gives a name to the thread visible in the Visual studio IDE (threads view)
+	*/
+	void setThreadName(const char* threadName);
+#endif
 
 private:
 
