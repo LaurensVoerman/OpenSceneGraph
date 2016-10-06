@@ -22,6 +22,9 @@ using namespace OpenThreads;
 
 GraphicsThread::GraphicsThread()
 {
+#ifdef OPENTHREADS_THREAD_NAME
+	setThreadName("Graphics");
+#endif
 }
 
 void GraphicsThread::run()

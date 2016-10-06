@@ -560,6 +560,10 @@ void Camera::setCameraThread(OperationThread* gt)
     {
         _cameraThread->setProcessorAffinity(_affinity);
         _cameraThread->setParent(this);
+#ifdef OPENTHREADS_THREAD_NAME
+		std::string threadName = "cameraThread" + getName();
+		_cameraThread->setThreadName(threadName.c_str());
+#endif
     }
 }
 

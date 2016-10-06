@@ -118,6 +118,9 @@ ImagePager::ImageThread::ImageThread(ImagePager* pager, Mode mode, const std::st
     _pager(pager),
     _name(name)
 {
+#ifdef OPENTHREADS_THREAD_NAME
+	setThreadName(name.c_str());
+#endif
 }
 
 ImagePager::ImageThread::ImageThread(const ImageThread& dt, ImagePager* pager):
