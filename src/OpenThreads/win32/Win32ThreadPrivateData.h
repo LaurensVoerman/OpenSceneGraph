@@ -17,6 +17,7 @@
 #ifndef _Win32PRIVATEDATA_H_
 #define _Win32PRIVATEDATA_H_
 
+#include <string>
 #include <OpenThreads/Thread>
 #include <OpenThreads/Block>
 #include "HandleHolder.h"
@@ -83,7 +84,9 @@ public:
     };
 
     static TlsHolder TLS;
-
+#ifdef OPENTHREADS_THREAD_NAME
+	std::string threadName;
+#endif
 };
 
 DWORD cooperativeWait(HANDLE waitHandle, unsigned long timeout);
