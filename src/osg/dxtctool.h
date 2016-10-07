@@ -42,6 +42,7 @@
 
 #include <osg/GL>
 #include <osg/Texture>
+#include <osg/Vec3i>
 
 #if defined(_MSC_VER)
 
@@ -78,9 +79,18 @@ bool isDXTC(GLenum pixelFormat);
 
 bool VerticalFlip(size_t Width, size_t Height, GLenum Format, void * pPixels);
 
-bool CompressedImageTranslucent(size_t Width, size_t Height, GLenum Format, void * pPixels);
+bool isCompressedImageTranslucent(size_t Width, size_t Height, GLenum Format, void * pPixels);
 
+//interpolate RGB565 colors with 2/3 part color1 and 1/3 part color2
+unsigned short interpolateColors21(unsigned short color1, unsigned short color2);
+//interpolate RGB565 colors with equal weights
+unsigned short interpolateColors11(unsigned short color1, unsigned short color2);
 
+bool CompressedImageGetColor(unsigned char color[4], unsigned int s, unsigned int t, unsigned int r, int width, int height, int depth, GLenum format, unsigned char *imageData);
+
+void compressedBlockOrientationConversion(const GLenum format, const unsigned char *src_block, unsigned char *dst_block, const osg::Vec3i& srcOrigin, const osg::Vec3i& rowDelta, const osg::Vec3i& columnDelta);
+
+void compressedBlockStripAlhpa(const GLenum format, const unsigned char *src_block, unsigned char *dst_block);
 // Class holding reference to DXTC image pixels 
 class dxtc_pixels
 {
