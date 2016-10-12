@@ -20,8 +20,9 @@
 #ifndef _OPENTHREADS_THREAD_
 #define _OPENTHREADS_THREAD_
 
+#ifdef _WIN32
 #define OPENTHREADS_THREAD_NAME 1
-
+#endif
 #include <sys/types.h>
 
 #include <OpenThreads/Mutex>
