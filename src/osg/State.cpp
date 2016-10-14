@@ -1895,13 +1895,13 @@ void State::print(std::ostream& fout) const
 
 void State::frameCompleted()
 {
-    if (getTimestampBits())
-    {
-        GLint64 timestamp;
-        _glExtensions->glGetInteger64v(GL_TIMESTAMP, &timestamp);
-        setGpuTimestamp(osg::Timer::instance()->tick(), timestamp);
-        //OSG_NOTICE<<"State::frameCompleted() setting time stamp. timestamp="<<timestamp<<std::endl;
-    }
+//    if (getTimestampBits())
+//    {
+//        GLint64 timestamp;
+//        _glExtensions->glGetInteger64v(GL_TIMESTAMP, &timestamp);
+//        setGpuTimestamp(osg::Timer::instance()->tick(), timestamp);
+//        //OSG_NOTICE<<"State::frameCompleted() setting time stamp. timestamp="<<timestamp<<std::endl;
+//    }
 }
 
 bool State::DefineMap::updateCurrentDefines()
