@@ -623,7 +623,14 @@ int Thread::setProcessorAffinity( const Affinity& affinity )
 
     if (pd->tid.get() == INVALID_HANDLE_VALUE)
        return -1;
-
+#ifdef OPENTHREADS_THREAD_NAME
+    if (pd->tid)
+    {
+        std::cout << pd->threadName << " setProcessorAffinity " << std::endl;
+        for (Affinity::ActiveCPUs::const_iterator itr = affinity.activeCPUs.begin(); itr != affinity.activeCPUs.end(); ++itr)
+            std::cout << pd->threadName << "   setting CPU : " << *itr << std::endl;
+    }
+#endif
 	return SetThreadAffinity(pd->tid.get(), affinity);
 }
 
@@ -746,6 +753,11 @@ int OpenThreads::SetProcessorAffinityOfCurrentThread(const Affinity& affinity)
     }
     else
     {
+#ifdef OPENTHREADS_THREAD_NAME
+        std::cout << "non OpenThreads thread" << " setProcessorAffinity " << std::endl;
+        for (Affinity::ActiveCPUs::const_iterator itr = affinity.activeCPUs.begin(); itr != affinity.activeCPUs.end(); ++itr)
+            std::cout << "non OpenThreads thread" << "   setting CPU : " << *itr << std::endl;
+#endif
 		return SetThreadAffinity(GetCurrentThread(), affinity);
     }
 }
