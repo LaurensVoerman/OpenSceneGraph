@@ -772,7 +772,16 @@ void Renderer::draw()
 
         if (acquireGPUStats)
         {
-            _querySupport->checkQuery(stats, state, _startTick);
+            GLuint64 gpuTime = state->getGpuTimestamp();
+            if (gpuTime == 0.0 || osg::Timer::instance()->delta_s(state->getGpuTick(), osg::Timer::instance()->tick()) > 20.0)
+            {
+                if (state->getTimestampBits())
+                {
+                    GLint64 timestamp;
+                    state->get<osg::GLExtensions>()->glGetInteger64v(GL_TIMESTAMP, &timestamp);
+                    state->setGpuTimestamp(osg::Timer::instance()->tick(), timestamp);
+                }
+            }
         }
 
         // do draw traversal
