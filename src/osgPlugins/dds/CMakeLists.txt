@@ -1,3 +1,3 @@
 SET(TARGET_SRC ReaderWriterDDS.cpp )
 #### end var setup  ###
-SETUP_PLUGIN(dds)
+SETUP_IMAGE_PLUGIN(dds)

@@ -10,4 +10,4 @@ IF(CMAKE_COMPILER_IS_GNUCXX OR ${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
 ENDIF()
 
 #### end var setup  ###
-SETUP_PLUGIN(svg svg)
+SETUP_IMAGE_PLUGIN(svg svg)

@@ -10,4 +10,4 @@ SET(TARGET_H
 )
 
 #### end var setup  ###
-SETUP_PLUGIN(hdr)
+SETUP_IMAGE_PLUGIN(hdr)

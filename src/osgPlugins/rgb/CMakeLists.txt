@@ -1,3 +1,3 @@
 SET(TARGET_SRC ReaderWriterRGB.cpp )
 #### end var setup  ###
-SETUP_PLUGIN(rgb)
+SETUP_IMAGE_PLUGIN(rgb)
