@@ -89,9 +89,11 @@ public:
     bool locked();
     void unlock();
 };
-//#define OSG_NOTIFY(level) if (osg::notifyScopeMutexLock notifyLock = osg::notifyScopeMutexLock(osg::isNotifyEnabled(level))) osg::notify(level)
-#define OSG_NOTIFY(level) if (osg::isNotifyEnabled(level)) for (osg::notifyScopeMutexLock notifyLock; notifyLock.locked(); notifyLock.unlock()) osg::notify(level)
-//#define OSG_NOTIFY(level) if (osg::isNotifyEnabled(level), osg::myScopedLock lock(getNotifySingleton()._notifyMutex)  ) osg::notify(level)
+
+//#define OSG_NOTIFY(level) if (osg::isNotifyEnabled(level)) for (osg::notifyScopeMutexLock notifyLock; notifyLock.locked(); notifyLock.unlock()) osg::notify(level)
+
+#define OSG_NOTIFY(level) if (osg::isNotifyEnabled(level)) osg::notify(level)
+
 #define OSG_ALWAYS OSG_NOTIFY(osg::ALWAYS)
 #define OSG_FATAL OSG_NOTIFY(osg::FATAL)
 #define OSG_WARN OSG_NOTIFY(osg::WARN)
