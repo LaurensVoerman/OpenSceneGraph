@@ -10,4 +10,4 @@ IF(CMAKE_COMPILER_IS_GNUCXX)
 ENDIF()
 
 #### end var setup  ###
-SETUP_PLUGIN(exr)
+SETUP_IMAGE_PLUGIN(exr)
