@@ -10,4 +10,4 @@ ENDIF()
 
 
 #### end var setup  ###
-SETUP_PLUGIN(jp2)
+SETUP_IMAGE_PLUGIN(jp2)

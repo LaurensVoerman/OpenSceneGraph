@@ -34,4 +34,4 @@ IF(CMAKE_COMPILER_IS_GNUCXX)
 ENDIF()
 
 #### end var setup  ###
-SETUP_PLUGIN(dicom dicom)
+SETUP_IMAGE_PLUGIN(dicom dicom)

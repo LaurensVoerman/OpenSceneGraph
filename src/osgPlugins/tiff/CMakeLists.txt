@@ -5,4 +5,4 @@ SET(TARGET_SRC ReaderWriterTIFF.cpp )
 SET(TARGET_LIBRARIES_VARS TIFF_LIBRARY)
 
 #### end var setup  ###
-SETUP_PLUGIN(tiff)
+SETUP_IMAGE_PLUGIN(tiff)
