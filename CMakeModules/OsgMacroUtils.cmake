@@ -378,7 +378,7 @@ MACRO(SETUP_PSEUDOLOADER_PLUGIN PLUGIN_NAME)
   SET_TARGET_PROPERTIES(${TARGET_TARGETNAME} PROPERTIES FOLDER "pseudo-loader")
   #replace default symbol (osgdb_trans_EXPORTS)
   SET_TARGET_PROPERTIES (${TARGET_TARGETNAME} PROPERTIES DEFINE_SYMBOL  "PSEUDOLOADERPLUGIN" )
-ENDMACRO(SETUP_IMAGE_PLUGIN PLUGIN_NAME)
+ENDMACRO(SETUP_PSEUDOLOADER_PLUGIN PLUGIN_NAME)
 
 #################################################################################################################
 # this is the macro for example and application setup
