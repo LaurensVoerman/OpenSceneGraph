@@ -4154,8 +4154,8 @@ void Optimizer::TextureAtlasVisitor::apply(osg::Node& node)
 
 void Optimizer::TextureAtlasVisitor::apply(osg::Drawable& node)
 {
-    if (!isOperationPermissibleForObject(&geode)) return;
-    setBasename(geode);
+    if (!isOperationPermissibleForObject(&node)) return;
+    setBasename(node);
     bool pushedStateState = false;
     osg::StateSet* ss = node.getStateSet();
     if (ss && ss->getDataVariance()==osg::Object::STATIC)
