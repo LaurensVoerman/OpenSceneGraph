@@ -278,6 +278,20 @@ void Optimizer::optimize(osg::Node* node, unsigned int options)
 
     }
 
+    if (options & REMOVE_REDUNDANT_NODES)
+    {
+        OSG_INFO<<"Optimizer::optimize() doing REMOVE_REDUNDANT_NODES"<<std::endl;
+
+        RemoveEmptyNodesVisitor renv(this);
+        node->accept(renv);
+        renv.removeEmptyNodes();
+
+        RemoveRedundantNodesVisitor rrnv(this);
+        node->accept(rrnv);
+        rrnv.removeRedundantNodes();
+
+    }
+
     if (options & MERGE_GEODES)
     {
         OSG_INFO<<"Optimizer::optimize() doing MERGE_GEODES"<<std::endl;
@@ -322,20 +336,6 @@ void Optimizer::optimize(osg::Node* node, unsigned int options)
         TriStripVisitor tsv(this);
         node->accept(tsv);
         tsv.stripify();
-    }
-
-    if (options & REMOVE_REDUNDANT_NODES)
-    {
-        OSG_INFO<<"Optimizer::optimize() doing REMOVE_REDUNDANT_NODES"<<std::endl;
-
-        RemoveEmptyNodesVisitor renv(this);
-        node->accept(renv);
-        renv.removeEmptyNodes();
-
-        RemoveRedundantNodesVisitor rrnv(this);
-        node->accept(rrnv);
-        rrnv.removeRedundantNodes();
-
     }
 
     if (options & FLATTEN_BILLBOARDS)
@@ -761,12 +761,15 @@ class CollectLowestTransformsVisitor : public BaseOptimizerVisitor
 
         inline bool isOperationPermissibleForObject(const osg::Object* object) const
         {
-            const osg::Drawable* drawable = dynamic_cast<const osg::Drawable*>(object);
-            if (drawable) return isOperationPermissibleForObject(drawable);
-
-            const osg::Node* node = dynamic_cast<const osg::Node*>(object);
-            if (node) return isOperationPermissibleForObject(node);
-
+            const osg::Node* node = object->asNode();
+            if (node)
+            {
+                const osg::Drawable* drawable = node->asDrawable();
+                if (drawable)
+                     return isOperationPermissibleForObject(drawable);
+                else
+                    return isOperationPermissibleForObject(node);
+            }
             return true;
         }
 
@@ -876,7 +879,10 @@ class CollectLowestTransformsVisitor : public BaseOptimizerVisitor
 
 void CollectLowestTransformsVisitor::doTransform(osg::Object* obj,osg::Matrix& matrix)
 {
-    osg::Drawable* drawable = dynamic_cast<osg::Drawable*>(obj);
+    osg::Node* node = obj->asNode();
+    if (!node)
+        return;
+    osg::Drawable* drawable = node->asDrawable();
     if (drawable)
     {
         osgUtil::TransformAttributeFunctor tf(matrix);
@@ -1062,7 +1068,10 @@ bool CollectLowestTransformsVisitor::removeTransforms(osg::Node* nodeWeCannotRem
                 group->setDataVariance(osg::Object::STATIC);
                 group->setNodeMask(transform->getNodeMask());
                 group->setStateSet(transform->getStateSet());
-                group->setUserData(transform->getUserData());
+                group->setUpdateCallback(transform->getUpdateCallback());
+                group->setEventCallback(transform->getEventCallback());
+                group->setCullCallback(transform->getCullCallback());
+                group->setUserDataContainer(transform->getUserDataContainer());
                 group->setDescriptions(transform->getDescriptions());
                 for(unsigned int i=0;i<transform->getNumChildren();++i)
                 {
@@ -1076,11 +1085,11 @@ bool CollectLowestTransformsVisitor::removeTransforms(osg::Node* nodeWeCannotRem
             }
             else
             {
-                osg::MatrixTransform* mt = dynamic_cast<osg::MatrixTransform*>(titr->first);
+                osg::MatrixTransform* mt = titr->first->asMatrixTransform();
                 if (mt) mt->setMatrix(osg::Matrix::identity());
                 else
                 {
-                    osg::PositionAttitudeTransform* pat = dynamic_cast<osg::PositionAttitudeTransform*>(titr->first);
+                    osg::PositionAttitudeTransform* pat = titr->first->asPositionAttitudeTransform();
                     if (pat)
                     {
                         pat->setPosition(osg::Vec3(0.0f,0.0f,0.0f));
@@ -1283,7 +1292,7 @@ void Optimizer::RemoveEmptyNodesVisitor::apply(osg::Group& group)
     {
         // only remove empty groups, but not empty occluders.
         if (group.getNumChildren()==0 && isOperationPermissibleForObject(&group) &&
-            (typeid(group)==typeid(osg::Group) || (dynamic_cast<osg::Transform*>(&group) && !dynamic_cast<osg::CameraView*>(&group))) &&
+            (typeid(group)==typeid(osg::Group) || (group.asTransform() && !dynamic_cast<osg::CameraView*>(&group))) &&
             (group.getNumChildrenRequiringUpdateTraversal()==0 && group.getNumChildrenRequiringEventTraversal()==0) )
         {
             _redundantNodeList.insert(&group);
@@ -1384,7 +1393,7 @@ void Optimizer::RemoveRedundantNodesVisitor::removeRedundantNodes()
         itr!=_redundantNodeList.end();
         ++itr)
     {
-        osg::ref_ptr<osg::Group> group = dynamic_cast<osg::Group*>(*itr);
+        osg::ref_ptr<osg::Group> group = (*itr)->asGroup();
         if (group.valid())
         {
             // take a copy of parents list since subsequent removes will modify the original one.
@@ -1780,14 +1789,12 @@ bool isAbleToMerge(const osg::Geometry& g1, const osg::Geometry& g2)
     return true;
 }
 
-bool Optimizer::MergeGeometryVisitor::mergeGeode(osg::Geode& geode)
+bool Optimizer::MergeGeometryVisitor::mergeGroup(osg::Group& group)
 {
-    if (!isOperationPermissibleForObject(&geode)) return false;
+    if (!isOperationPermissibleForObject(&group)) return false;
 
-    if (geode.getNumDrawables()>=2)
+    if (group.getNumChildren()>=2)
     {
-
-        // OSG_NOTICE<<"Before "<<geode.getNumDrawables()<<std::endl;
 
         typedef std::vector<osg::Geometry*>                         DuplicateList;
         typedef std::vector< osg::ref_ptr<osg::Drawable> >          DrawableList;
@@ -1799,9 +1806,9 @@ bool Optimizer::MergeGeometryVisitor::mergeGeode(osg::Geode& geode)
         DrawableList standardDrawables;
 
         unsigned int i;
-        for(i=0;i<geode.getNumDrawables();++i)
+        for(i=0;i<group.getNumChildren();++i)
         {
-            osg::Drawable* drawable = geode.getDrawable(i);
+            osg::Drawable* drawable = group.getChild(i)->asDrawable();
             if (drawable)
             {
                 osg::Geometry* geom = drawable->asGeometry();
@@ -1943,26 +1950,6 @@ bool Optimizer::MergeGeometryVisitor::mergeGeode(osg::Geode& geode)
 
         if (needToDoMerge)
         {
-            // first take a reference to all the drawables to prevent them being deleted prematurely
-            DrawableList keepDrawables;
-            keepDrawables.resize(geode.getNumDrawables());
-            for(i=0; i<geode.getNumDrawables(); ++i)
-            {
-                osg::Drawable* drawable = geode.getDrawable(i);
-                if (drawable) keepDrawables[i] = geode.getDrawable(i);
-            }
-
-            // now clear the drawable list of the Geode so we don't have to remove items one by one (which is slow)
-            geode.removeDrawables(0, geode.getNumDrawables());
-
-            // add back in the standard drawables which arn't possible to merge.
-            for(DrawableList::iterator sitr = standardDrawables.begin();
-                sitr != standardDrawables.end();
-                ++sitr)
-            {
-                geode.addDrawable(sitr->get());
-            }
-
             // now do the merging of geometries
             for(MergeList::iterator mitr = mergeList.begin();
                 mitr != mergeList.end();
@@ -1972,17 +1959,14 @@ bool Optimizer::MergeGeometryVisitor::mergeGeode(osg::Geode& geode)
                 if (duplicateList.size()>1)
                 {
                     osg::Geometry* lhs = duplicateList.front();
-                    geode.addDrawable(lhs);
                     for(DuplicateList::iterator ditr = duplicateList.begin()+1;
                         ditr != duplicateList.end();
                         ++ditr)
                     {
                         mergeGeometry(*lhs,**ditr);
+
+                        group.removeChild(*ditr);
                     }
-                }
-                else if (duplicateList.size()>0)
-                {
-                    geode.addDrawable(duplicateList.front());
                 }
             }
         }
@@ -2033,16 +2017,17 @@ bool Optimizer::MergeGeometryVisitor::mergeGeode(osg::Geode& geode)
         }
 #endif
 
-        // OSG_NOTICE<<"After "<<geode.getNumDrawables()<<std::endl;
-
     }
 
 
     // convert all polygon primitives which has 3 indices into TRIANGLES, 4 indices into QUADS.
     unsigned int i;
-    for(i=0;i<geode.getNumDrawables();++i)
+    for(i=0;i<group.getNumChildren();++i)
     {
-        osg::Geometry* geom = dynamic_cast<osg::Geometry*>(geode.getDrawable(i));
+        osg::Drawable* drawable = group.getChild(i)->asDrawable();
+        if (!drawable)
+            continue;
+        osg::Geometry* geom = drawable->asGeometry();
         if (geom)
         {
             osg::Geometry::PrimitiveSetList& primitives = geom->getPrimitiveSetList();
@@ -2067,9 +2052,12 @@ bool Optimizer::MergeGeometryVisitor::mergeGeode(osg::Geode& geode)
     }
 
     // now merge any compatible primitives.
-    for(i=0;i<geode.getNumDrawables();++i)
+    for(i=0;i<group.getNumChildren();++i)
     {
-        osg::Geometry* geom = dynamic_cast<osg::Geometry*>(geode.getDrawable(i));
+        osg::Drawable* drawable = group.getChild(i)->asDrawable();
+        if (!drawable)
+            continue;
+        osg::Geometry* geom = drawable->asGeometry();
         if (geom)
         {
             if (geom->getNumPrimitiveSets()>0 &&
@@ -2273,21 +2261,18 @@ class MergeArrayVisitor : public osg::ArrayVisitor
 {
     protected:
         osg::Array* _lhs;
-        int         _offset;
     public:
         MergeArrayVisitor() :
-            _lhs(0),
-            _offset(0) {}
+            _lhs(0) {}
 
 
         /// try to merge the content of two arrays.
-        bool merge(osg::Array* lhs,osg::Array* rhs, int offset=0)
+        bool merge(osg::Array* lhs,osg::Array* rhs)
         {
             if (lhs==0 || rhs==0) return true;
             if (lhs->getType()!=rhs->getType()) return false;
 
             _lhs = lhs;
-            _offset = offset;
 
             rhs->accept(*this);
             return true;
@@ -2300,30 +2285,23 @@ class MergeArrayVisitor : public osg::ArrayVisitor
             lhs->insert(lhs->end(),rhs.begin(),rhs.end());
         }
 
-        template<typename T>
-        void _mergeAndOffset(T& rhs)
-        {
-            T* lhs = static_cast<T*>(_lhs);
-
-            typename T::iterator itr;
-            for(itr = rhs.begin();
-                itr != rhs.end();
-                ++itr)
-            {
-                lhs->push_back(*itr + _offset);
-            }
-        }
-
         virtual void apply(osg::Array&) { OSG_WARN << "Warning: Optimizer's MergeArrayVisitor cannot merge Array type." << std::endl; }
 
-        virtual void apply(osg::ByteArray& rhs) { if (_offset) _mergeAndOffset(rhs); else  _merge(rhs); }
-        virtual void apply(osg::ShortArray& rhs) { if (_offset) _mergeAndOffset(rhs); else  _merge(rhs); }
-        virtual void apply(osg::IntArray& rhs) { if (_offset) _mergeAndOffset(rhs); else  _merge(rhs); }
-        virtual void apply(osg::UByteArray& rhs) { if (_offset) _mergeAndOffset(rhs); else  _merge(rhs); }
-        virtual void apply(osg::UShortArray& rhs) { if (_offset) _mergeAndOffset(rhs); else  _merge(rhs); }
-        virtual void apply(osg::UIntArray& rhs) { if (_offset) _mergeAndOffset(rhs); else  _merge(rhs); }
+        virtual void apply(osg::ByteArray& rhs) { _merge(rhs); }
+        virtual void apply(osg::ShortArray& rhs) { _merge(rhs); }
+        virtual void apply(osg::IntArray& rhs) { _merge(rhs); }
+        virtual void apply(osg::UByteArray& rhs) { _merge(rhs); }
+        virtual void apply(osg::UShortArray& rhs) { _merge(rhs); }
+        virtual void apply(osg::UIntArray& rhs) { _merge(rhs); }
 
         virtual void apply(osg::Vec4ubArray& rhs) { _merge(rhs); }
+        virtual void apply(osg::Vec3ubArray& rhs) { _merge(rhs); }
+        virtual void apply(osg::Vec2ubArray& rhs) { _merge(rhs); }
+
+        virtual void apply(osg::Vec4usArray& rhs) { _merge(rhs); }
+        virtual void apply(osg::Vec3usArray& rhs) { _merge(rhs); }
+        virtual void apply(osg::Vec2usArray& rhs) { _merge(rhs); }
+
         virtual void apply(osg::FloatArray& rhs) { _merge(rhs); }
         virtual void apply(osg::Vec2Array& rhs) { _merge(rhs); }
         virtual void apply(osg::Vec3Array& rhs) { _merge(rhs); }
@@ -2337,6 +2315,7 @@ class MergeArrayVisitor : public osg::ArrayVisitor
         virtual void apply(osg::Vec2bArray&  rhs) { _merge(rhs); }
         virtual void apply(osg::Vec3bArray&  rhs) { _merge(rhs); }
         virtual void apply(osg::Vec4bArray&  rhs) { _merge(rhs); }
+
         virtual void apply(osg::Vec2sArray& rhs) { _merge(rhs); }
         virtual void apply(osg::Vec3sArray& rhs) { _merge(rhs); }
         virtual void apply(osg::Vec4sArray& rhs) { _merge(rhs); }

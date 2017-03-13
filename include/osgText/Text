@@ -23,7 +23,6 @@
 
 namespace osgText {
 
-
 class OSGTEXT_EXPORT Text : public osgText::TextBase
 {
 public:
@@ -281,9 +280,6 @@ public:
     virtual void accept(osg::PrimitiveFunctor& pf) const;
 
 
-    /** Set whether to use a mutex to ensure ref() and unref() are thread safe.*/
-    virtual void setThreadSafeRefUnref(bool threadSafe);
-
     /** Resize any per context GLObject buffers to specified size. */
     virtual void resizeGLObjectBuffers(unsigned int maxSize);
 
@@ -294,48 +290,22 @@ public:
 
 public:
 
+
     // internal structures, variable and methods used for rendering of characters.
     struct OSGTEXT_EXPORT GlyphQuads
     {
         typedef std::vector<Glyph*> Glyphs;
-        typedef std::vector<unsigned int> LineNumbers;
-        typedef osg::ref_ptr<osg::Vec2Array> Coords2;
-        typedef osg::ref_ptr<osg::Vec3Array> Coords3;
-        typedef osg::ref_ptr<osg::Vec2Array> TexCoords;
-        typedef osg::ref_ptr<osg::Vec4Array> ColorCoords;
 
         Glyphs                          _glyphs;
-        Coords2                         _coords;
-        osg::buffered_object<Coords3>   _transformedCoords;
-        TexCoords                       _texcoords;
-        LineNumbers                     _lineNumbers;
-
-        osg::buffered_object<Coords3>   _transformedBackdropCoords[8];
-        ColorCoords    _colorCoords;
-
-        osg::ref_ptr<osg::DrawElementsUShort> _quadIndices;
-        void updateQuadIndices();
+        Primitives                      _primitives;
 
         GlyphQuads();
         GlyphQuads(const GlyphQuads& gq);
 
-        void initGlyphQuads();
-        void initGPUBufferObjects();
+        void setupPrimitives(Text::BackdropType backdropType);
 
         Glyphs& getGlyphs() { return _glyphs; }
         const Glyphs& getGlyphs() const { return _glyphs; }
-
-        Coords2& getCoords() { return _coords; }
-        const Coords2& getCoords() const { return _coords; }
-
-        Coords3& getTransformedCoords(unsigned int contexID) { return _transformedCoords[contexID]; }
-        const Coords3& getTransformedCoords(unsigned int contexID) const { return _transformedCoords[contexID]; }
-
-        TexCoords& getTexCoords() { return _texcoords; }
-        const TexCoords& getTexCoords() const { return _texcoords; }
-
-        LineNumbers& getLineNumbers() { return _lineNumbers; }
-        const LineNumbers& getLineNumbers() const { return _lineNumbers; }
 
         /** Resize any per context GLObject buffers to specified size. */
         void resizeGLObjectBuffers(unsigned int maxSize);
@@ -355,7 +325,7 @@ public:
     /** Direct Access to GlyphQuads */
     const GlyphQuads* getGlyphQuads(GlyphTexture* texture) const
     {
-        TextureGlyphQuadMap::iterator itGlyphQuad = _textureGlyphQuadMap.find(texture);
+        TextureGlyphQuadMap::const_iterator itGlyphQuad = _textureGlyphQuadMap.find(texture);
         if (itGlyphQuad == _textureGlyphQuadMap.end()) return NULL;
 
         return &itGlyphQuad->second;
@@ -366,6 +336,7 @@ public:
         return _textureGlyphQuadMap;
     }
 
+    void addGlyphQuad(Glyph* glyph, const osg::Vec2& minc, const osg::Vec2& maxc, const osg::Vec2& mintc, const osg::Vec2& maxtc);
 
 protected:
 
@@ -379,7 +350,7 @@ protected:
     // members which have public access.
 
     // iternal map used for rendering. Set up by the computeGlyphRepresentation() method.
-    mutable TextureGlyphQuadMap            _textureGlyphQuadMap;
+    TextureGlyphQuadMap            _textureGlyphQuadMap;
 
     void computeGlyphRepresentation();
 
@@ -387,15 +358,15 @@ protected:
 
     bool computeAverageGlyphWidthAndHeight(float& avg_width, float& avg_height) const;
 
-    virtual void computePositions(unsigned int contextID) const;
+    virtual void computePositionsImplementation();
 
-    void computeBackdropPositions(unsigned int contextID) const;
-    void computeBackdropBoundingBox() const;
-    void computeBoundingBoxMargin() const;
+    void computeBackdropPositions();
+    void computeBackdropBoundingBox();
+    void computeBoundingBoxMargin();
 
-    void computeColorGradients() const;
-    void computeColorGradientsOverall() const;
-    void computeColorGradientsPerCharacter() const;
+    void computeColorGradients();
+    void computeColorGradientsOverall();
+    void computeColorGradientsPerCharacter();
 
     void drawImplementation(osg::State& state, const osg::Vec4& colorMultiplier) const;
     void drawForegroundText(osg::State& state, const GlyphQuads& glyphquad, const osg::Vec4& colorMultiplier) const;
