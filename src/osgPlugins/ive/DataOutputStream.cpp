@@ -1232,7 +1232,15 @@ void DataOutputStream::writeDrawable(const osg::Drawable* drawable)
             ((ive::Text*)(drawable))->write(this);
         else
         {
+#if 1
+            osg::ref_ptr<osg::Geometry> geom = new osg::Geometry();
+            std::string name(drawable->className());
+            name += " class not supported by ive format";
+            geom->setName(name);
+            ((ive::Geometry*)(geom.get()))->write(this);
+#else
             throwException("Unknown drawable in DataOutputStream::writeDrawable()");
+#endif
         }
         if (_verboseOutput) std::cout<<"read/writeDrawable() ["<<id<<"]"<<std::endl;
     }
