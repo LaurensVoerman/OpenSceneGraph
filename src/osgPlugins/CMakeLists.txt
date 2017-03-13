@@ -65,6 +65,7 @@ ADD_PLUGIN_DIRECTORY(revisions)
 ADD_PLUGIN_DIRECTORY(view)
 ADD_PLUGIN_DIRECTORY(shadow)
 ADD_PLUGIN_DIRECTORY(terrain)
+ADD_PLUGIN_DIRECTORY(stdin)
 
 ############################################################
 #
