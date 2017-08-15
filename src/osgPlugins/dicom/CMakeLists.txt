@@ -5,11 +5,7 @@ IF  (DCMTK_FOUND)
 
     SET(TARGET_SRC ReaderWriterDICOM.cpp )
 
-#    LINK_LIBRARIES(${DCMTK_LIBRARIES} ${ZLIB_LIBRARY})
-# link debug versions with d postfix
-#    SET(TARGET_LIBRARIES_VARS ${DCMTK_LIBRARIES} ${ZLIB_LIBRARY}) <- this won't work, need the variables, not the values
-
-    SET(TARGET_LIBRARIES_VARS DCMTK_dcmdata_LIBRARY DCMTK_dcmimage_LIBRARY DCMTK_dcmimgle_LIBRARY DCMTK_dcmnet_LIBRARY DCMTK_oflog_LIBRARY DCMTK_ofstd_LIBRARY ZLIB_LIBRARY)
+    LINK_LIBRARIES(${DCMTK_LIBRARIES} ${ZLIB_LIBRARY})
 
     ADD_DEFINITIONS(-DUSE_DCMTK)
 
@@ -39,10 +35,3 @@ ENDIF()
 
 #### end var setup  ###
 SETUP_IMAGE_PLUGIN(dicom dicom)
-
-IF  (DCMTK_FOUND)
-        IF(MSVC)
-            #msvc complains about multiple defined symbols - link anyway
-            set_target_properties(${TARGET_TARGETNAME} PROPERTIES LINK_FLAGS "/FORCE:MULTIPLE" )
-        ENDIF(MSVC)
-ENDIF  (DCMTK_FOUND)
