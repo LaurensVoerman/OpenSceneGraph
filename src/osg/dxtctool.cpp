@@ -281,7 +281,8 @@ bool isCompressedImageTranslucent(size_t width, size_t height, GLenum format, vo
                     running_a_index >>= 3;
                     if ((3 * j / 8) == last_added_byte) {
                         ++last_added_byte;
-                        running_a_index += (((unsigned short)texelsBlock->alpha3[last_added_byte]) << (8 - (3 * j & 0x7)));
+                        //(&texelsBlock->alpha3[0]) to avoid gcc warning: array subscript is above array bounds [-Warray-bounds]
+                        running_a_index += (((unsigned short)(&(texelsBlock->alpha3[0]))[last_added_byte]) << (8 - (3 * j & 0x7)));
                     }
                 }
                 // Next block
@@ -565,7 +566,8 @@ void compressedBlockOrientationConversion(const GLenum format, const unsigned ch
                 running_a_index >>= 3;
                 if ((3 * ++j / 8) == last_added_byte) {
                     ++last_added_byte;
-                    running_a_index += (((unsigned short)src_texelsBlock->alpha3[last_added_byte]) << (8 - (3 * j & 0x7)));
+                    //(&texelsBlock->alpha3[0]) to avoid gcc warning: array subscript is above array bounds [-Warray-bounds]
+                    running_a_index += (((unsigned short)(&(src_texelsBlock->alpha3[0]))[last_added_byte]) << (8 - (3 * j & 0x7)));
                 }
                 source_pixel = source_pixel + rowDelta;
             }
