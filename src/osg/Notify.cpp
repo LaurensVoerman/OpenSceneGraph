@@ -61,8 +61,6 @@ struct NotifyStreamBuffer : public std::stringbuf
 {
     NotifyStreamBuffer() : _severity(osg::NOTICE)
     {
-        str(std::string(4095, 0));
-        pubseekpos(0, std::ios_base::out);
     }
 
     void setNotifyHandler(osg::NotifyHandler *handler) { _handler = handler; }
