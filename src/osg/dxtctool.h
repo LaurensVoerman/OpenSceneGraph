@@ -31,14 +31,14 @@
 // Current version: 1.00 BETA 1 (27/08/2002)
 //
 // Comment: Only works with DXTC mode supported by OpenGL.
-//          (currently: DXT1/DXT3/DXT5) 
+//          (currently: DXT1/DXT3/DXT5)
 //
 // History: -
 //
 //////////////////////////////////////////////////////////////////////
 
 #ifndef DXTCTOOL_H
-#define DXTCTOOL_H 
+#define DXTCTOOL_H
 
 #include <osg/GL>
 #include <osg/Texture>
@@ -91,7 +91,7 @@ bool CompressedImageGetColor(unsigned char color[4], unsigned int s, unsigned in
 void compressedBlockOrientationConversion(const GLenum format, const unsigned char *src_block, unsigned char *dst_block, const osg::Vec3i& srcOrigin, const osg::Vec3i& rowDelta, const osg::Vec3i& columnDelta);
 
 void compressedBlockStripAlhpa(const GLenum format, const unsigned char *src_block, unsigned char *dst_block);
-// Class holding reference to DXTC image pixels 
+// Class holding reference to DXTC image pixels
 class dxtc_pixels
 {
 public:
@@ -112,7 +112,7 @@ protected:
     inline bool SupportedFormat() const;
 
     // Vertical flipping functions
-    void VFlip_DXT1() const;    
+    void VFlip_DXT1() const;
     void VFlip_DXT3() const;
     void VFlip_DXT5() const;
 
@@ -126,7 +126,7 @@ protected:
     inline void BVF_Alpha_DXT5_H2(void * const pBlock) const;                        // V. flip one alpha (DXT5) block with its virtual height == 2
     inline void BVF_Alpha_DXT5_H4(void * const pBlock) const;                        // V. flip one alpha (DXT5) block with its virtual height == 4
     inline void BVF_Alpha_DXT5(void * const pBlock1, void * const pBlock2) const;    // V. flip and swap two alpha (DXT5) blocks, with their virtual height == 4
-    
+
     // Block localization functions
     inline void * GetBlock(size_t i, size_t j, size_t BlockSize) const;
 
@@ -165,7 +165,7 @@ inline bool isDXTC(GLenum pixelFormat)
 }
 
 inline bool VerticalFlip(size_t Width, size_t Height, GLenum Format, void * pPixels) {
-    return (dxtc_pixels(Width, Height, Format, pPixels)).VFlip(); 
+    return (dxtc_pixels(Width, Height, Format, pPixels)).VFlip();
 }
 
 
