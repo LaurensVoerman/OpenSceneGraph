@@ -45,6 +45,10 @@
 #include <unistd.h>
 #include <cstdlib>
 
+#ifndef GLX_CONTEXT_PROFILE_MASK_ARB
+#define GLX_CONTEXT_PROFILE_MASK_ARB            0x9126
+#endif
+
 using namespace osgViewer;
 
 #ifdef OSG_USE_EGL
