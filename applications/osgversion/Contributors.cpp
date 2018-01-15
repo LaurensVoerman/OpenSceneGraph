@@ -275,7 +275,12 @@ const char* invalidNames[] =
     "I",
     "TriangleFunctor",
     "PrimitiveFunctor",
-    "OpenMW"
+    "OpenMW",
+    "StreamOperator",
+    "SceneLoader",
+    "OpenGL",
+    "FindLIBLAS",
+    "MinGW"
 };
 
 

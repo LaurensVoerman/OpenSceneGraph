@@ -56,6 +56,7 @@ using namespace std;
 // GlyphTexture
 //
 GlyphTexture::GlyphTexture():
+    _shaderTechnique(GREYSCALE),
     _usedY(0),
     _partUsedX(0),
     _partUsedY(0)
@@ -167,7 +168,7 @@ void GlyphTexture::addGlyph(Glyph* glyph, int posX, int posY)
 
     glyph->setTextureInfo(_shaderTechnique, info.get());
 
-    copyGlyphImage(glyph, info);
+    copyGlyphImage(glyph, info.get());
 }
 
 void GlyphTexture::copyGlyphImage(Glyph* glyph, Glyph::TextureInfo* info)
