@@ -256,9 +256,7 @@ public:
     {
         OSG_NOTICE<<"Reallocating Arrays"<<std::endl;
 
-        typedef std::vector< osg::ref_ptr<osg::Array> > ArrayRefVector;
         typedef std::vector< osg::ref_ptr<osg::Geometry> > GeometryVector;
-		ArrayRefVector newArrays;
         GeometryVector newGeometries;
         for(GeometryMap::iterator itr = _geometryMap.begin();
             itr != _geometryMap.end();
