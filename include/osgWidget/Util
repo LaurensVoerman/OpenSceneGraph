@@ -50,7 +50,7 @@ inline std::ostream& info()
 
 inline char lowerCaseChar(const char in)
 {
-    return (unsigned char)(::tolower((int)(in)));
+    return (unsigned char)(::tolower((int)((unsigned char)in)));
 }
 
 inline std::string lowerCase(const std::string& str)
