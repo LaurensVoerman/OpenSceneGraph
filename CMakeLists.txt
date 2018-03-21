@@ -2,14 +2,14 @@
 # OpenSceneGraph CMake build file
 #
 SET(OPENSCENEGRAPH_MAJOR_VERSION 3)
-SET(OPENSCENEGRAPH_MINOR_VERSION 5)
-SET(OPENSCENEGRAPH_PATCH_VERSION 10)
+SET(OPENSCENEGRAPH_MINOR_VERSION 6)
+SET(OPENSCENEGRAPH_PATCH_VERSION 0)
 SET(OPENSCENEGRAPH_SOVERSION 155)
 
 
 # set to 0 when not a release candidate, non zero means that any generated
 # git tags will be treated as release candidates of given number
-SET(OPENSCENEGRAPH_RELEASE_CANDIDATE 0)
+SET(OPENSCENEGRAPH_RELEASE_CANDIDATE 1)
 set(CMAKE_ALLOW_LOOSE_LOOP_CONSTRUCTS TRUE)
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
@@ -76,9 +76,9 @@ IF(APPLE AND NOT ANDROID)
     #set iphone arch and flags taken from http://sites.google.com/site/michaelsafyan/coding/resources/how-to-guides/cross-compile-for-the-iphone/how-to-cross-compile-for-the-iphone-using-cmake
     IF(OSG_BUILD_PLATFORM_IPHONE)
       IF(${IPHONE_VERSION_MIN} LESS "7.0")
-	SET(CMAKE_OSX_ARCHITECTURES "armv6;armv7" CACHE STRING "Build architectures for iOS" FORCE)
+        SET(CMAKE_OSX_ARCHITECTURES "armv6;armv7" CACHE STRING "Build architectures for iOS" FORCE)
       ELSE()
-	SET(CMAKE_OSX_ARCHITECTURES "armv7;armv7s;arm64" CACHE STRING "Build architectures for iOS" FORCE)
+        SET(CMAKE_OSX_ARCHITECTURES "armv7;armv7s;arm64" CACHE STRING "Build architectures for iOS" FORCE)
       ENDIF()
 
     ELSE()
@@ -210,12 +210,12 @@ IF (OSG_MAINTAINER)
     )
 
     ADD_CUSTOM_TARGET(branch-test
-        COMMAND echo ${GITCOMMAND} branch ${OPENSCENEGRAPH_BRANCH} -m ${BRANCH_MESSAGE}
+        COMMAND echo ${GITCOMMAND} branch ${OPENSCENEGRAPH_BRANCH}
         COMMAND echo ${GITCOMMAND} push origin ${OPENSCENEGRAPH_BRANCH}
     )
 
     ADD_CUSTOM_TARGET(branch-run
-        COMMAND ${GITCOMMAND} branch ${OPENSCENEGRAPH_BRANCH} -m ${BRANCH_MESSAGE}
+        COMMAND ${GITCOMMAND} branch ${OPENSCENEGRAPH_BRANCH}
         COMMAND ${GITCOMMAND} push origin ${OPENSCENEGRAPH_BRANCH}
     )
 
@@ -262,6 +262,8 @@ IF(APPLE)
             SET (IPHONE_DEVROOT "/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer")
             SET (IPHONE_SDKROOT "${IPHONE_DEVROOT}/SDKs/iPhoneSimulator${IPHONE_SDKVER}.sdk")
         ENDIF()
+
+        SET (IPHONE_ENABLE_BITCODE "NO" CACHE STRING "IOS Enable Bitcode")
 
         # Apple iOS: Find OpenGLES
         FIND_LIBRARY(OPENGLES_LIBRARY OpenGLES)
