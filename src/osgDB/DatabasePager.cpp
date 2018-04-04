@@ -1548,8 +1548,6 @@ void DatabasePager::requestNodeFile(const std::string& fileName, osg::NodePath& 
 
         if (!_startThreadCalled)
         {
-            _startThreadCalled = true;
-            _done = false;
             OSG_INFO<<"DatabasePager::startThread()"<<std::endl;
 
             if (_databaseThreads.empty())
@@ -1558,6 +1556,9 @@ void DatabasePager::requestNodeFile(const std::string& fileName, osg::NodePath& 
                     osg::DisplaySettings::instance()->getNumOfDatabaseThreadsHint(),
                     osg::DisplaySettings::instance()->getNumOfHttpDatabaseThreadsHint());
             }
+
+            _startThreadCalled = true;
+            _done = false;
 
             for(DatabaseThreadList::const_iterator dt_itr = _databaseThreads.begin();
                 dt_itr != _databaseThreads.end();

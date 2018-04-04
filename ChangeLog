@@ -1,3 +1,206 @@
+Tue, 3 Apr 2018 15:48:37 +0100
+Author : Thomas Hogarth
+missing gles2 check
+
+Tue, 3 Apr 2018 15:29:54 +0100
+Author : Robert Osfield
+Added a ShadowTechniue::setShadowedScene() virtual method to make it possible to implement techniques as fascades to other techniques
+
+Tue, 3 Apr 2018 12:42:37 +0100
+Author : Andreas Ekstrand
+The attached code (from the 3.6 branch) adds a keepSeparatePoints option to the SHP plugin which makes it possible to avoid merging point features into multi-points, in case you e.g. need to keep separate point attributes.It also contains a fix in the Xbase DBF parser, converting a numeric shape attribute to double instead of integer. As stated in e.g. https://en.wikipedia.org/wiki/.dbf the numeric field can contain decimals.
+
+
+Tue, 3 Apr 2018 11:35:31 +0100
+Author : Robert Osfield
+Removed osgShadow::ShadowVolume as it functionality isn't functional
+
+Tue, 3 Apr 2018 12:10:29 +0100
+Author : OpenSceneGraph git repository
+Merge pull request #516 from eligovision/OpenSceneGraph-3.6_programosg::Program's compileGLObjects and apply methods fixed for OSG witho…
+
+Mon, 2 Apr 2018 23:56:36 +0300
+Author : Konstantin S. Matveyev
+osg::Program's compileGLObjects and apply methods fixed for OSG without OSG_GL_FIXED_FUNCTION_AVAILABLE
+
+Mon, 2 Apr 2018 18:26:26 +0100
+Author : Robert Osfield
+Rewrote the handling of AutoTransform::setAutoScaleToScreen(bool) functionality so that is disabling CullingActive when switched on.
+
+Mon, 2 Apr 2018 16:21:20 +0100
+Author : Robert Osfield
+Added __VERSION__<140 check for usage of gl_ClipVertex to avoid GL3 core profile usage issues
+
+Mon, 2 Apr 2018 14:08:47 +0100
+Author : Robert Osfield
+Restructured merge geometry code to make it easier to follow
+
+Mon, 2 Apr 2018 11:44:03 +0100
+Author : Robert Osfield
+Fix for MergeGeometryVsiitor bug. Restructured the processing the merge geometry list to avoid missing geometries that aren't binned along with other geometries.
+
+Sun, 1 Apr 2018 10:40:25 +0100
+Author : Robert Osfield
+Removed stray CMAkeLists.txt from TARGET_SRC list
+
+Sun, 1 Apr 2018 10:18:45 +0100
+Author : Andreas Ekstrand
+Small fix (from the 3.6 branch) in the osgjs plugin, avoiding a double addition of the CullFace attribute when it has been turned off. This resulted in an empty json object in the osgjs file causing warnings in osgjs.
+
+Fri, 30 Mar 2018 17:52:12 +0100
+Author : Robert Osfield
+Updated NEWS and ChangeLog for 3.6.0-rc3
+
+Fri, 30 Mar 2018 16:34:01 +0100
+Author : Robert Osfield
+Fixed build with OSG_USE_REF_PTR_IMPLICIT_OUTPUT_CONVERSION set to OFF
+
+Fri, 30 Mar 2018 15:27:35 +0100
+Author : Robert Osfield
+Added suport for writing to gl_ClipVertex
+
+Fri, 30 Mar 2018 15:16:45 +0100
+Author : Robert Osfield
+To osgclipe example added --text textstring and --simple command line options to test mixing text and clipping
+
+Fri, 30 Mar 2018 12:39:52 +0100
+Author : Robert Osfield
+Changed Layer::get*Value(..) methods to const
+
+Thu, 29 Mar 2018 11:38:04 +0100
+Author : Robert Osfield
+Fixed double calling of TerrainTechnique::init().
+
+Thu, 29 Mar 2018 11:35:34 +0100
+Author : Robert Osfield
+Maded TerrainTechnique::setTerrainTile(..), addNeighbour(..), removeNeighbour(..) and containsNeighbour(..) virtual and public to enable implementation of TerrainTechnique that act as a facade to actual TerrainTechnique implementations.
+
+Wed, 28 Mar 2018 14:04:41 +0100
+Author : Robert Osfield
+Updated RC number to 3
+
+Wed, 28 Mar 2018 11:34:52 +0100
+Author : Robert Osfield
+Fixed osgDB::findFileInDirectory() handling of directory strings with trailing \ or / that was causing failure to find valid files in otherwise valid directories
+
+Tue, 27 Mar 2018 18:56:38 +0800
+Author : Haojia Yu
+OutputStream writes images using its Options objectwhen writing images, OutputStream can search files using its Options object rahter than always using FilePathList object of global Regidtry instance.
+
+
+Tue, 27 Mar 2018 08:39:52 +0100
+Author : OpenSceneGraph git repository
+Merge pull request #510 from eligovision/OpenSceneGraph-3.6_iosGraphicsWindowIOS: multithreaded viewer's mode support added; updated…
+
+Tue, 27 Mar 2018 08:37:29 +0100
+Author : OpenSceneGraph git repository
+Merge pull request #508 from eligovision/OpenSceneGraph-3.6_pluginsOSG 3.6: Write support with .curl pseudo extension added
+
+Tue, 27 Mar 2018 08:35:57 +0100
+Author : OpenSceneGraph git repository
+Merge pull request #509 from eligovision/OpenSceneGraph-3.6_vasVertexArrayState: typo fixed in log
+
+Mon, 26 Mar 2018 20:40:14 +0300
+Author : Konstantin S. Matveyev
+GraphicsWindowIOS: multithreaded viewer's mode support added; updated for iOS-11 SDK; view rotations fixed; GLES2, GLES3 preprocessors fixed; tested on iPhone4 and upper
+
+Fri, 19 Jan 2018 22:20:01 +0300
+Author : Konstantin S. Matveyev
+VertexArrayState: typo fixed in log
+
+Mon, 26 Mar 2018 17:59:49 +0300
+Author : Konstantin S. Matveyev
+Write support with .curl pseudo extension added
+
+Mon, 26 Mar 2018 09:55:53 +0100
+Author : Robert Osfield
+Updated ChangeLog
+
+Mon, 26 Mar 2018 09:54:59 +0100
+Author : Robert Osfield
+Updated NEWS for 3.6.0-rc2
+
+Sun, 25 Mar 2018 12:14:46 +0100
+Author : Robert Osfield
+Re-ordered the creating of the DatagbaseThread to avoid startThread being called twice.
+
+Sun, 25 Mar 2018 12:13:50 +0100
+Author : Robert Osfield
+Added check if thraeding is running before executing start thread.
+
+Sat, 24 Mar 2018 18:02:35 +0000
+Author : Robert Osfield
+Updated ChangeLog, AUTHORS and Controbitors for 3.6.0-rc1
+
+Sat, 24 Mar 2018 17:51:06 +0000
+Author : Robert Osfield
+Added new features in 3.6 to NEWS release
+
+Sat, 24 Mar 2018 12:13:59 +0000
+Author : Robert Osfield
+First step for 3.6 stable release news
+
+Sat, 24 Mar 2018 11:23:59 +0000
+Author : Robert Osfield
+Fixed read shader to safer ref version
+
+Sat, 24 Mar 2018 10:59:15 +0000
+Author : Robert Osfield
+Fixed spotlight colour mixing
+
+Fri, 23 Mar 2018 20:08:37 +0000
+Author : OpenSceneGraph git repository
+Merge pull request #502 from Haojia521/OutputStreamUseTargertSoVersionwrite binary file with a specific so version
+
+Fri, 23 Mar 2018 19:54:33 +0000
+Author : Robert Osfield
+Removed serailizers that are now supplied by osg::Node
+
+Fri, 23 Mar 2018 19:54:01 +0000
+Author : Robert Osfield
+Fixed member variable names to avoid conflicts with osg::Node
+
+Fri, 23 Mar 2018 18:07:36 +0000
+Author : Robert Osfield
+Removed Drawable writing out of StateSet as this is now done by Node
+
+Fri, 23 Mar 2018 18:07:07 +0300
+Author : Michael Kapelko
+Provide osgemscripten example CMake flags in a more stable way
+
+Fri, 23 Mar 2018 12:55:00 +0000
+Author : Robert Osfield
+Changed the isBufferObjectSupported flag so that it's true when either VBO or PBO's are supported
+
+Thu, 22 Mar 2018 17:35:13 +0000
+Author : Paul Obermeier
+Fixes for VS2008 and 2010 build
+
+Thu, 22 Mar 2018 16:51:03 +0000
+Author : Robert Osfield
+Moved OPENGL_INCLUDE_DIR include into it's own INCLUDE_DIRECTORIES(SYSTEM ${OPENGL_INCLUDE_DIR}) entry to help with FreeBSD builds where a previous rev of the OSG has already been installed
+
+Thu, 22 Mar 2018 09:04:47 +0000
+Author : Robert Osfield
+Removed typedef and used osg::GraphicsContext::Cameras explictly to avoid any hiding of type
+
+Wed, 21 Mar 2018 19:44:25 +0300
+Author : Victor
+Fixed bug of determining availability of functions ‘pthread_getconcurrency’, ‘pthread_setconcurrency’, ‘pthread_setaffinity_np’ in ‘pthread’ libraryCMake cannot find 'pthread_getconcurrency’, ‘pthread_setconcurrency’ and ‘pthread_setaffinity_np' functions in 'pthread' library because when linking internal cmake test did’t specifed ‘-l pthread’.
+
+
+Tue, 20 Mar 2018 09:20:59 +0000
+Author : Robert Osfield
+Removed -m message that was causing problems with branch creation
+
+Tue, 20 Mar 2018 09:12:58 +0000
+Author : Robert Osfield
+Updated version numbers in prep for 3.6 branch
+
+Tue, 20 Mar 2018 09:02:05 +0000
+Author : Robert Osfield
+Updated ChangeLog and AUTHORS file
+
 Mon, 19 Mar 2018 14:27:18 +0000
 Author : Robert Osfield
 Updated ChangeLog and updated version to 3.5.11
