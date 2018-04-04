@@ -163,4 +163,4 @@ class NormalFlipReader : public osgDB::ReaderWriter
         }
 };
 
-REGISTER_OSGPLUGIN(normals, NormalFlipReader)
+REGISTER_OSGPLUGIN(normalflip, NormalFlipReader)
