@@ -4,12 +4,12 @@
 SET(OPENSCENEGRAPH_MAJOR_VERSION 3)
 SET(OPENSCENEGRAPH_MINOR_VERSION 6)
 SET(OPENSCENEGRAPH_PATCH_VERSION 1)
-SET(OPENSCENEGRAPH_SOVERSION 156)
+SET(OPENSCENEGRAPH_SOVERSION 157)
 
 
 # set to 0 when not a release candidate, non zero means that any generated
 # git tags will be treated as release candidates of given number
-SET(OPENSCENEGRAPH_RELEASE_CANDIDATE 0)
+SET(OPENSCENEGRAPH_RELEASE_CANDIDATE 2)
 set(CMAKE_ALLOW_LOOSE_LOOP_CONSTRUCTS TRUE)
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
@@ -556,9 +556,13 @@ ELSE()
     OPTION(OSG_CPP_EXCEPTIONS_AVAILABLE "Set to OFF to disable compile of OSG components that use C++ exceptions." ON)
 ENDIF()
 
+SET(OSG_GL_CONTEXT_VERSION "1.0" CACHE STRING "GL Context String to pass when creaing graphics contexts")
 
 # Map the OSG_GL*_AVAILABLE settings to OpenGL header settings
 IF (OSG_GL3_AVAILABLE)
+
+    SET(OSG_GL_CONTEXT_VERSION "3.3")
+
     IF (APPLE)
         SET(OPENGL_HEADER1 "#include <OpenGL/gl.h>" CACHE STRING "#include<> line for OpenGL Header")
         SET(OPENGL_HEADER2 "#include <OpenGL/gl3.h>" CACHE STRING "#include<> line for additional OpenGL Headers if required")

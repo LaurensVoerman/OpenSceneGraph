@@ -211,8 +211,6 @@ void osgParticle::ParticleSystem::update(double dt, osg::NodeVisitor& nv)
 
 void osgParticle::ParticleSystem::drawImplementation(osg::RenderInfo& renderInfo) const
 {
-    if (_particles.size() <= 0) return;
-
     ScopedReadLock lock(_readWriteMutex);
 
     osg::State& state = *renderInfo.getState();
@@ -220,6 +218,8 @@ void osgParticle::ParticleSystem::drawImplementation(osg::RenderInfo& renderInfo
     // update the frame count, so other objects can detect when
     // this particle system is culled
     _last_frame = state.getFrameStamp()->getFrameNumber();
+
+    if (_particles.size() <= 0) return;
 
     // update the dirty flag of delta time, so next time a new request for delta time
     // will automatically cause recomputing
@@ -232,7 +232,7 @@ void osgParticle::ParticleSystem::drawImplementation(osg::RenderInfo& renderInfo
 
     if (_useVertexArray)
     {
-        // note from Robert Osfield, September 2016, this block implementated for backwards compatibility but is pretty way vertex array/shaders were hacked into osgParticle
+        // note from Robert Osfield, September 2016, this block implemented for backwards compatibility but is pretty way vertex array/shaders were hacked into osgParticle
 
         // set up arrays and primitives ready to fill in
         if (!ad.vertices.valid())
