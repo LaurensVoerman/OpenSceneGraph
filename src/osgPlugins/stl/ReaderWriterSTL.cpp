@@ -113,7 +113,7 @@ public:
     virtual WriteResult writeNode(const osg::Node& node, const std::string& fileName, const Options* = NULL) const;
 
 private:
-    class ReaderObject
+    class ReaderObject : public osg::Referenced
     {
     public:
         ReaderObject(bool noTriStripPolygons, bool generateNormals = true):
@@ -182,7 +182,7 @@ private:
             geom->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::TRIANGLES, 0, _numFacets * 3));
 
             if(!_noTriStripPolygons) {
-                osgUtil::optimizeMesh(geom);
+                osgUtil::optimizeMesh(geom.get());
             }
 
             return geom;
@@ -526,7 +526,7 @@ osgDB::ReaderWriter::ReadResult ReaderWriterSTL::readNode(const std::string& fil
     else
         readerObject = new AsciiReaderObject(localOptions.noTriStripPolygons);
 
-    std::auto_ptr<ReaderObject> readerPtr(readerObject);
+    osg::ref_ptr<ReaderObject> readerPtr(readerObject);
 
     while (1)
     {
