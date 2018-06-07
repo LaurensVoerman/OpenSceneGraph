@@ -9,7 +9,7 @@ SET(OPENSCENEGRAPH_SOVERSION 157)
 
 # set to 0 when not a release candidate, non zero means that any generated
 # git tags will be treated as release candidates of given number
-SET(OPENSCENEGRAPH_RELEASE_CANDIDATE 2)
+SET(OPENSCENEGRAPH_RELEASE_CANDIDATE 0)
 set(CMAKE_ALLOW_LOOSE_LOOP_CONSTRUCTS TRUE)
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
@@ -26,24 +26,9 @@ if(COMMAND cmake_policy)
 
     # tell CMake to prefer CMake's own CMake modules when available
     # only available from cmake-2.8.4
-    if(${CMAKE_MAJOR_VERSION} GREATER 2 OR
-        (${CMAKE_MAJOR_VERSION} EQUAL 2 AND ${CMAKE_MINOR_VERSION} GREATER 8) OR
-        (${CMAKE_MAJOR_VERSION} EQUAL 2 AND ${CMAKE_MINOR_VERSION} EQUAL 8 AND ${CMAKE_PATCH_VERSION} GREATER 3))
+    if("${CMAKE_VERSION}" VERSION_GREATER 2.8.3)
         cmake_policy(SET CMP0017 NEW)
     endif()
-
-    # cmake-2.6.1 introduces policy cmp0008 decide how to treat full path libraries that do not appear to be valid library file names
-    # quote from cvslog "Such libraries worked by accident in the VS IDE and Xcode generators in CMake 2.4 and below."
-    if(${CMAKE_MAJOR_VERSION} GREATER 2 OR
-        (${CMAKE_MAJOR_VERSION} EQUAL 2 AND ${CMAKE_MINOR_VERSION} GREATER 6) OR
-        (${CMAKE_MAJOR_VERSION} EQUAL 2 AND ${CMAKE_MINOR_VERSION} EQUAL 6 AND ${CMAKE_PATCH_VERSION} GREATER 0))
-        cmake_policy(SET CMP0008 OLD)
-    endif()
-
-    # nicer version check - but needs at least CMake 2.6.2? Worth upgrading the requirements?
-    #if("${CMAKE_VERSION}" VERSION_GREATER 2.8.10)
-    # or even easier (available in cmake-2.6)
-    #if(POLICY CMPxyzw)
 
 endif()
 
@@ -330,12 +315,13 @@ IF(UNIX AND NOT ANDROID)
 
 ENDIF()
 
-INCLUDE_DIRECTORIES(${OpenSceneGraph_SOURCE_DIR}/include/)
 
 # Make the headers visible to everything
 IF(NOT ${PROJECT_BINARY_DIR} EQUAL ${PROJECT_SOURCE_DIR})
    INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR}/include)
 ENDIF()
+
+INCLUDE_DIRECTORIES(${OpenSceneGraph_SOURCE_DIR}/include/)
 
 INCLUDE_DIRECTORIES(SYSTEM ${OPENGL_INCLUDE_DIR})
 
@@ -766,7 +752,6 @@ ELSE()
     FIND_PACKAGE(COLLADA)
     FIND_PACKAGE(FBX)
     FIND_PACKAGE(ZLIB)
-    FIND_PACKAGE(Xine)
     FIND_PACKAGE(OpenVRML)
     FIND_PACKAGE(GDAL)
     FIND_PACKAGE(GTA)
