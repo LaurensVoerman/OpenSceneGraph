@@ -9,7 +9,7 @@ SET(OPENSCENEGRAPH_SOVERSION 157)
 
 # set to 0 when not a release candidate, non zero means that any generated
 # git tags will be treated as release candidates of given number
-SET(OPENSCENEGRAPH_RELEASE_CANDIDATE 3)
+SET(OPENSCENEGRAPH_RELEASE_CANDIDATE 0)
 set(CMAKE_ALLOW_LOOSE_LOOP_CONSTRUCTS TRUE)
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
@@ -561,7 +561,7 @@ IF (OSG_GL3_AVAILABLE)
             SET(OPENGL_HEADER1 "#include <GL/glcorearb.h>" CACHE STRING "#include<> line for OpenGL Header")
             SET(OPENGL_HEADER2 "" CACHE STRING "#include<> line for additional OpenGL Headers if required")
         ELSE()
-            SET(OPENGL_HEADER1 "#include <GL3/gl3.h>" CACHE STRING "#include<> line for OpenGL Header")
+            SET(OPENGL_HEADER1 "#include <GL/gl.h>" CACHE STRING "#include<> line for OpenGL Header")
             SET(OPENGL_HEADER2 "" CACHE STRING "#include<> line for additional OpenGL Headers if required")
         ENDIF()
 
