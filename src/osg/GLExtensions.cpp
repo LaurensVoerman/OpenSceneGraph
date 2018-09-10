@@ -395,6 +395,17 @@ OSG_INIT_SINGLETON_PROXY(GLExtensionDisableStringInitializationProxy, osg::getGL
 
     #elif defined (__linux__)
 
+        typedef void (*__GLXextFuncPtr)(void);
+        typedef __GLXextFuncPtr (*GetProcAddressARBProc)(const char*);
+
+        #if !defined(OSG_GLES1_AVAILABLE) && !defined(OSG_GLES2_AVAILABLE)
+        static GetProcAddressARBProc s_glXGetProcAddressARB = convertPointerType<GetProcAddressARBProc, void*>(dlsym(0, "glXGetProcAddressARB"));
+        if (s_glXGetProcAddressARB)
+        {
+            return convertPointerType<void*, __GLXextFuncPtr>((s_glXGetProcAddressARB)(funcName));
+        }
+        #endif
+
         return dlsym(0, funcName);
 
     #elif defined (__QNX__)
@@ -964,19 +975,19 @@ GLExtensions::GLExtensions(unsigned int in_contextID):
     if (validContext) glGetIntegerv(GL_MAX_ARRAY_TEXTURE_LAYERS, &maxLayerCount);
 
     // ARB_bindless_texture
-    setGLExtensionFuncPtr(glGetTextureHandle,             "glGetTextureHandle", "glGetTextureHandleARB","glGetTextureHandleNV", validContext);
-    setGLExtensionFuncPtr(glGetTextureSamplerHandle,      "glGetTextureSamplerHandle","glGetTextureSamplerHandleARB", "glGetTextureSamplerHandleNV", validContext);
-    setGLExtensionFuncPtr(glMakeTextureHandleResident,    "glMakeTextureHandleResident", "glMakeTextureHandleResidentARB","glMakeTextureHandleResidentNV", validContext);
-    setGLExtensionFuncPtr(glMakeTextureHandleNonResident, "glMakeTextureHandleNonResident", "glMakeTextureHandleNonResidentARB", "glMakeTextureHandleNonResidentNV",validContext);
-    setGLExtensionFuncPtr(glIsTextureHandleResident,      "glIsTextureHandleResident","glIsTextureHandleResidentARB", "glIsTextureHandleResidentNV", validContext);
-    setGLExtensionFuncPtr(glGetImageHandle,      "glGetImageHandle","glGetImageHandleARB", "glGetImageHandleNV", validContext);
-    setGLExtensionFuncPtr(glMakeImageHandleResident,      "glMakeImageHandleResident","glMakeImageHandleResidentARB", "glMakeImageHandleResidentNV", validContext);
-    setGLExtensionFuncPtr(glMakeImageHandleNonResident,      "glMakeImageHandleNonResident","glMakeImageHandleNonResidentARB", "glMakeImageHandleNonResidentNV", validContext);
-    setGLExtensionFuncPtr(glIsImageHandleResident,      "glIsImageHandleResident","glIsImageHandleResidentARB", "glIsImageHandleResidentNV", validContext);
-    setGLExtensionFuncPtr(glUniformHandleui64,            "glUniformHandleui64", "glUniformHandleui64ARB","glUniformHandleui64NV", validContext);
-    setGLExtensionFuncPtr(glUniformHandleuiv64,      "glUniformHandleuiv64","glUniformHandleuiv64ARB", "glUniformHandleuiv64NV", validContext);
-    setGLExtensionFuncPtr(glProgramUniformHandleui64,      "glProgramUniformHandleui64","glProgramUniformHandleui64ARB", "glProgramUniformHandleui64NV", validContext);
-    setGLExtensionFuncPtr(glProgramUniformHandleuiv64,      "glProgramUniformHandleuiv64","glProgramUniformHandleuiv64ARB", "glProgramUniformHandleuiv64NV", validContext);
+    setGLExtensionFuncPtr(glGetTextureHandle,             "glGetTextureHandleNV", "glGetTextureHandleARB","glGetTextureHandle", validContext);
+    setGLExtensionFuncPtr(glGetTextureSamplerHandle,      "glGetTextureSamplerHandleNV","glGetTextureSamplerHandleARB", "glGetTextureSamplerHandle", validContext);
+    setGLExtensionFuncPtr(glMakeTextureHandleResident,    "glMakeTextureHandleResidentNV", "glMakeTextureHandleResidentARB","glMakeTextureHandleResident", validContext);
+    setGLExtensionFuncPtr(glMakeTextureHandleNonResident, "glMakeTextureHandleNonResidentNV", "glMakeTextureHandleNonResidentARB", "glMakeTextureHandleNonResident",validContext);
+    setGLExtensionFuncPtr(glIsTextureHandleResident,      "glIsTextureHandleResidentNV","glIsTextureHandleResidentARB", "glIsTextureHandleResident", validContext);
+    setGLExtensionFuncPtr(glGetImageHandle,      "glGetImageHandleNV","glGetImageHandleARB", "glGetImageHandle", validContext);
+    setGLExtensionFuncPtr(glMakeImageHandleResident,      "glMakeImageHandleResidentNV","glMakeImageHandleResidentARB", "glMakeImageHandleResident", validContext);
+    setGLExtensionFuncPtr(glMakeImageHandleNonResident,      "glMakeImageHandleNonResidentNV","glMakeImageHandleNonResidentARB", "glMakeImageHandleNonResident", validContext);
+    setGLExtensionFuncPtr(glIsImageHandleResident,      "glIsImageHandleResidentNV","glIsImageHandleResidentARB", "glIsImageHandleResident", validContext);
+    setGLExtensionFuncPtr(glUniformHandleui64,            "glUniformHandleui64NV", "glUniformHandleui64ARB","glUniformHandleui64", validContext);
+    setGLExtensionFuncPtr(glUniformHandleuiv64,      "glUniformHandleuiv64NV","glUniformHandleuiv64ARB", "glUniformHandleuiv64", validContext);
+    setGLExtensionFuncPtr(glProgramUniformHandleui64,      "glProgramUniformHandleui64NV","glProgramUniformHandleui64ARB", "glProgramUniformHandleui64", validContext);
+    setGLExtensionFuncPtr(glProgramUniformHandleuiv64,      "glProgramUniformHandleuiv64NV","glProgramUniformHandleuiv64ARB", "glProgramUniformHandleuiv64", validContext);
 
 
     // Blending
