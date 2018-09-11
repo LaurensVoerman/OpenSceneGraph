@@ -321,7 +321,7 @@ track_eval_linear(Lib3dsTrack *track, float *value, float t) {
         else
         {
             int i;
-            for (i = 0; i < track->type; ++i) value[i] = 0.0f;
+            for (i = 0; i < (int)(track->type); ++i) value[i] = 0.0f;
         }
         return;
     }
@@ -330,12 +330,12 @@ track_eval_linear(Lib3dsTrack *track, float *value, float t) {
 
     if (index < 0) {
         int i;
-        for (i = 0; i < track->type; ++i) value[i] = track->keys[0].value[i];
+        for (i = 0; i < (int)(track->type); ++i) value[i] = track->keys[0].value[i];
         return;
     }
     if (index >= track->nkeys) {
         int i;
-        for (i = 0; i < track->type; ++i) value[i] = track->keys[track->nkeys-1].value[i];
+        for (i = 0; i < (int)(track->type); ++i) value[i] = track->keys[track->nkeys-1].value[i];
         return;
     }
 
