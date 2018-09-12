@@ -374,8 +374,11 @@ public:
 				}
 				loadGroup->addChild(matTrans);
 			} else {
-				if (cOff >= 0) OSG_WARN << "ReaderWritercfcells: couldn't read cell - data not in range" << std::endl;
-				else OSG_WARN << "ReaderWritercfcells: cannot handle a vertex with no position" << std::endl;
+				if (cOff >= 0) {
+					OSG_WARN << "ReaderWritercfcells: couldn't read cell - data not in range" << std::endl;
+				} else {
+					OSG_WARN << "ReaderWritercfcells: cannot handle a vertex with no position" << std::endl;
+				}
 			}
 			//next!
 			++currentFooter;
