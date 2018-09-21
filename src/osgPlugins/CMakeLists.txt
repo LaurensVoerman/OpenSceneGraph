@@ -70,6 +70,14 @@ ADD_PLUGIN_DIRECTORY(stdin)
 
 ############################################################
 #
+#  Compression/Decompression plugins
+#
+IF(BROTLI_FOUND)
+    ADD_PLUGIN_DIRECTORY(brotli)
+ENDIF()
+
+############################################################
+#
 #  Main native plugins
 #
 ADD_PLUGIN_DIRECTORY(osg)
