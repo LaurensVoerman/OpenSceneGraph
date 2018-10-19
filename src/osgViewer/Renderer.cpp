@@ -684,14 +684,6 @@ void Renderer::cull()
 
         osg::Timer_t afterCullTick = osg::Timer::instance()->tick();
 
-#if 0
-        osg::State* state = sceneView->getState();
-        if (sceneView->getDynamicObjectCount()==0 && state->getDynamicObjectRenderingCompletedCallback())
-        {
-            // OSG_NOTICE<<"Completed in cull"<<std::endl;
-            state->getDynamicObjectRenderingCompletedCallback()->completed(state);
-        }
-#endif
         if (stats && stats->collectStats("rendering"))
         {
             DEBUG_MESSAGE<<"Collecting rendering stats"<<std::endl;
@@ -705,7 +697,18 @@ void Renderer::cull()
         {
             collectSceneViewStats(frameNumber, sceneView, stats);
         }
-
+#define CULL_CALLS_DYNAMICOBJECTRENDERINGCOMPLETED 1
+#ifdef CULL_CALLS_DYNAMICOBJECTRENDERINGCOMPLETED
+        //block until draw is ready:
+        osgUtil::SceneView* sceneView2 = _availableQueue.takeFront();
+        _availableQueue.add(sceneView2);
+        osg::State* state = sceneView->getState();
+        if (sceneView->getDynamicObjectCount() == 0 && state->getDynamicObjectRenderingCompletedCallback())
+        {
+            // OSG_NOTICE<<"Completed in cull"<<std::endl;
+            state->getDynamicObjectRenderingCompletedCallback()->completed(state);
+        }
+#endif
         _drawQueue.add(sceneView);
 
     }
@@ -740,12 +743,16 @@ void Renderer::draw()
         if (_done)
         {
             OSG_INFO<<"Renderer::release() causing draw to exit"<<std::endl;
+            sceneView->clearReferencesToDependentCameras();
+            _availableQueue.add(sceneView);
             return;
         }
 
         if (_graphicsThreadDoesCull)
         {
             OSG_INFO<<"Renderer::draw() completing early due to change in _graphicsThreadDoesCull flag."<<std::endl;
+            sceneView->clearReferencesToDependentCameras();
+            _availableQueue.add(sceneView);
             return;
         }
 
@@ -761,13 +768,14 @@ void Renderer::draw()
         }
 
         state->setDynamicObjectCount(sceneView->getDynamicObjectCount());
-
+//moved to cull()
+#ifndef CULL_CALLS_DYNAMICOBJECTRENDERINGCOMPLETED
         if (sceneView->getDynamicObjectCount()==0 && state->getDynamicObjectRenderingCompletedCallback())
         {
             // OSG_NOTICE<<"Completed in cull"<<std::endl;
             state->getDynamicObjectRenderingCompletedCallback()->completed(state);
         }
-
+#endif
         bool acquireGPUStats = stats && _querySupport && stats->collectStats("gpu");
 
         if (acquireGPUStats)
@@ -806,6 +814,7 @@ void Renderer::draw()
             sceneView->draw();
         }
 
+        sceneView->clearReferencesToDependentCameras();
         _availableQueue.add(sceneView);
 
         if (acquireGPUStats)
@@ -828,7 +837,6 @@ void Renderer::draw()
             stats->setAttribute(frameNumber, "Draw traversal time taken", osg::Timer::instance()->delta_s(beforeDrawTick, afterDrawTick));
         }
 
-        sceneView->clearReferencesToDependentCameras();
     }
 
     DEBUG_MESSAGE<<"end draw() "<<this<<std::endl;
@@ -886,11 +894,16 @@ void Renderer::cull_draw()
         collectSceneViewStats(frameNumber, sceneView, stats);
     }
 
+//cull_draw() only called in modes with no dynamicobjectrenderingbarrier (or statistics camera)
+// ( DrawThreadPerContext || CullThreadPerCameraDrawThreadPerContex ) only statistics camera gets here...
 #if 0
+    state->setDynamicObjectCount(sceneView->getDynamicObjectCount());
     if (state->getDynamicObjectCount()==0 && state->getDynamicObjectRenderingCompletedCallback())
     {
         state->getDynamicObjectRenderingCompletedCallback()->completed(state);
     }
+#else
+//  state->setDynamicObjectCount(0, false);//make sure the DynamicObjectRenderingCompletedCallback is NEVER called.
 #endif
 
 
