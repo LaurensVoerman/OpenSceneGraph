@@ -11,15 +11,16 @@
  * OpenSceneGraph Public License for more details.
 */
 
+//forward compatibility for ot21: export the functions from dll as well as allowing inline versions in new binaries
+#include <OpenThreads/Config>
+#if defined(_OPENTHREADS_ATOMIC_USE_WIN32_INTERLOCKED)
+# define _OPENTHREADS_ATOMIC_USE_LIBRARY_ROUTINES
+#endif
+
+
 #include <OpenThreads/Atomic>
 
-#if defined(_OPENTHREADS_ATOMIC_USE_WIN32_INTERLOCKED)
-#include <windows.h>
-#include <intrin.h>
-#pragma intrinsic(_InterlockedAnd)
-#pragma intrinsic(_InterlockedOr)
-#pragma intrinsic(_InterlockedXor)
-#endif
+
 
 namespace OpenThreads {
 
@@ -43,7 +44,7 @@ Atomic::operator++()
 #if defined(_OPENTHREADS_ATOMIC_USE_GCC_BUILTINS)
     return __sync_add_and_fetch(&_value, 1);
 #elif defined(_OPENTHREADS_ATOMIC_USE_WIN32_INTERLOCKED)
-    return InterlockedIncrement(&_value);
+    return _InterlockedIncrement(&_value);
 #elif defined(_OPENTHREADS_ATOMIC_USE_BSD_ATOMIC)
     return OSAtomicIncrement32(&_value);
 #else
@@ -57,7 +58,7 @@ Atomic::operator--()
 #if defined(_OPENTHREADS_ATOMIC_USE_GCC_BUILTINS)
     return __sync_sub_and_fetch(&_value, 1);
 #elif defined(_OPENTHREADS_ATOMIC_USE_WIN32_INTERLOCKED)
-    return InterlockedDecrement(&_value);
+    return _InterlockedDecrement(&_value);
 #elif defined(_OPENTHREADS_ATOMIC_USE_BSD_ATOMIC)
     return OSAtomicDecrement32(&_value);
 #else
@@ -114,7 +115,7 @@ Atomic::exchange(unsigned value)
 #if defined(_OPENTHREADS_ATOMIC_USE_GCC_BUILTINS)
     return __sync_lock_test_and_set(&_value, value);
 #elif defined(_OPENTHREADS_ATOMIC_USE_WIN32_INTERLOCKED)
-    return InterlockedExchange(&_value, value);
+    return _InterlockedExchange(&_value, value);
 #elif defined(_OPENTHREADS_ATOMIC_USE_BSD_ATOMIC)
     return OSAtomicCompareAndSwap32(_value, value, &_value);
 #else
@@ -129,7 +130,7 @@ Atomic::operator unsigned() const
     __sync_synchronize();
     return _value;
 #elif defined(_OPENTHREADS_ATOMIC_USE_WIN32_INTERLOCKED)
-    MemoryBarrier();
+    _ReadBarrier();
     return _value;
 #elif defined(_OPENTHREADS_ATOMIC_USE_BSD_ATOMIC)
     OSMemoryBarrier();
@@ -145,7 +146,12 @@ AtomicPtr::assign(void* ptrNew, const void* const ptrOld)
 #if defined(_OPENTHREADS_ATOMIC_USE_GCC_BUILTINS)
     return __sync_bool_compare_and_swap(&_ptr, (void*)ptrOld, ptrNew);
 #elif defined(_OPENTHREADS_ATOMIC_USE_WIN32_INTERLOCKED)
-    return ptrOld == InterlockedCompareExchangePointer((PVOID volatile*)&_ptr, (PVOID)ptrNew, (PVOID)ptrOld);
+    //return ptrOld == InterlockedCompareExchangePointer((PVOID volatile*)&_ptr, (PVOID)ptrNew, (PVOID)ptrOld);
+  #if defined(_WIN64)
+    return ptrOld == (const void*)_InterlockedCompareExchange64((volatile intptr_t*)&_ptr, (intptr_t)ptrNew, (intptr_t)ptrOld);
+  #else
+    return ptrOld == (const void*)_InterlockedCompareExchange((volatile intptr_t*)&_ptr, (intptr_t)ptrNew, (intptr_t)ptrOld);
+#endif
 #elif defined(_OPENTHREADS_ATOMIC_USE_BSD_ATOMIC)
     return OSAtomicCompareAndSwapPtr((void *)ptrOld, (void *)ptrNew, (void* volatile *)&_ptr);
 #else
@@ -160,7 +166,7 @@ AtomicPtr::get() const
     __sync_synchronize();
     return _ptr;
 #elif defined(_OPENTHREADS_ATOMIC_USE_WIN32_INTERLOCKED)
-    MemoryBarrier();
+    _ReadBarrier();
     return _ptr;
 #elif defined(_OPENTHREADS_ATOMIC_USE_BSD_ATOMIC)
     OSMemoryBarrier();
