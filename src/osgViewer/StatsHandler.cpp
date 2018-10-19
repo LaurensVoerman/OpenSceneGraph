@@ -175,8 +175,8 @@ bool StatsHandler::handle(const osgGA::GUIEventAdapter& ea, osgGA::GUIActionAdap
                 {
                     if (!_initialized)
                     {
-                        setUpHUDCamera(viewer);
                         setUpScene(viewer);
+                        setUpHUDCamera(viewer);
                     }
 
                     ++_statsType;
