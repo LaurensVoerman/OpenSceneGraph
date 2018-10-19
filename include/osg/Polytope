@@ -253,9 +253,22 @@ class OSG_EXPORT Polytope
             {
                 if (_resultMask&selector_mask)
                 {
+#if 1
+                    float d = itr->distance(bs.center());
+                    if (fabs(d) < bs.radius()) {
+                        //most likely: plane intersects bounding sphere
+                    } else {
+                        if (d < 0.0f) {
+                            return false; // outside clipping set.
+                        } else {
+                            _resultMask ^= selector_mask; // subsequent checks against this plane not required.
+                        }
+                    }
+#else
                     int res=itr->intersect(bs);
                     if (res<0) return false; // outside clipping set.
                     else if (res>0) _resultMask ^= selector_mask; // subsequent checks against this plane not required.
+#endif
                 }
                 selector_mask <<= 1;
             }

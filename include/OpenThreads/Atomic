@@ -23,7 +23,20 @@
 #elif defined(_OPENTHREADS_ATOMIC_USE_GCC_BUILTINS) && defined(__i386__)
 # define _OPENTHREADS_ATOMIC_USE_LIBRARY_ROUTINES
 #elif defined(_OPENTHREADS_ATOMIC_USE_WIN32_INTERLOCKED)
-# define _OPENTHREADS_ATOMIC_USE_LIBRARY_ROUTINES
+#if defined(_OPENTHREADS_ATOMIC_USE_WIN32_INTERLOCKED)
+#include <intrin.h>
+#pragma intrinsic(_InterlockedAnd)
+#pragma intrinsic(_InterlockedOr)
+#pragma intrinsic(_InterlockedXor)
+#pragma intrinsic (_InterlockedIncrement)
+#pragma intrinsic (_InterlockedDecrement)
+#pragma intrinsic (_InterlockedExchange)
+#if defined(_WIN64)
+#pragma intrinsic (_InterlockedCompareExchange64)
+#else
+#pragma intrinsic (_InterlockedCompareExchange)
+#endif
+#endif
 #elif defined(_OPENTHREADS_ATOMIC_USE_SUN)
 # include <atomic.h>
 # include "Mutex"
@@ -115,6 +128,8 @@ Atomic::operator++()
 #elif defined(_OPENTHREADS_ATOMIC_USE_MUTEX)
     ScopedLock<Mutex> lock(_mutex);
     return ++_value;
+#elif defined(_OPENTHREADS_ATOMIC_USE_WIN32_INTERLOCKED)
+    return _InterlockedIncrement(&_value);
 #else
     return ++_value;
 #endif
@@ -132,6 +147,8 @@ Atomic::operator--()
 #elif defined(_OPENTHREADS_ATOMIC_USE_MUTEX)
     ScopedLock<Mutex> lock(_mutex);
     return --_value;
+#elif defined(_OPENTHREADS_ATOMIC_USE_WIN32_INTERLOCKED)
+    return _InterlockedDecrement(&_value);
 #else
     return --_value;
 #endif
@@ -150,6 +167,8 @@ Atomic::AND(unsigned value)
     ScopedLock<Mutex> lock(_mutex);
     _value &= value;
     return _value;
+#elif defined(_OPENTHREADS_ATOMIC_USE_WIN32_INTERLOCKED)
+    return _InterlockedAnd(&_value, value);
 #else
     _value &= value;
     return _value;
@@ -169,6 +188,8 @@ Atomic::OR(unsigned value)
     ScopedLock<Mutex> lock(_mutex);
     _value |= value;
     return _value;
+#elif defined(_OPENTHREADS_ATOMIC_USE_WIN32_INTERLOCKED)
+    return _InterlockedOr(&_value, value);
 #else
     _value |= value;
     return _value;
@@ -190,6 +211,8 @@ Atomic::XOR(unsigned value)
     ScopedLock<Mutex> lock(_mutex);
     _value ^= value;
     return _value;
+#elif defined(_OPENTHREADS_ATOMIC_USE_WIN32_INTERLOCKED)
+    return _InterlockedXor(&_value, value);
 #else
     _value ^= value;
     return _value;
@@ -210,6 +233,8 @@ Atomic::exchange(unsigned value)
     unsigned oldval = _value;
     _value = value;
     return oldval;
+#elif defined(_OPENTHREADS_ATOMIC_USE_WIN32_INTERLOCKED)
+    return _InterlockedExchange(&_value, value);
 #else
     unsigned oldval = _value;
     _value = value;
@@ -232,6 +257,9 @@ Atomic::operator unsigned() const
 #elif defined(_OPENTHREADS_ATOMIC_USE_MUTEX)
     ScopedLock<Mutex> lock(_mutex);
     return _value;
+#elif defined(_OPENTHREADS_ATOMIC_USE_WIN32_INTERLOCKED)
+    _ReadBarrier();
+    return _value;
 #else
     return _value;
 #endif
@@ -252,6 +280,12 @@ AtomicPtr::assign(void* ptrNew, const void* const ptrOld)
         return false;
     _ptr = ptrNew;
     return true;
+#elif defined(_OPENTHREADS_ATOMIC_USE_WIN32_INTERLOCKED)
+  #if defined(_WIN64)
+    return ptrOld == (const void*)_InterlockedCompareExchange64((volatile intptr_t*)&_ptr, (intptr_t)ptrNew, (intptr_t)ptrOld);
+  #else
+    return ptrOld == (const void*)_InterlockedCompareExchange((volatile intptr_t*)&_ptr, (intptr_t)ptrNew, (intptr_t)ptrOld);
+  #endif
 #else
     if (_ptr != ptrOld)
         return false;
@@ -274,6 +308,9 @@ AtomicPtr::get() const
     return _ptr;
 #elif defined(_OPENTHREADS_ATOMIC_USE_MUTEX)
     ScopedLock<Mutex> lock(_mutex);
+    return _ptr;
+#elif defined(_OPENTHREADS_ATOMIC_USE_WIN32_INTERLOCKED)
+    _ReadBarrier();
     return _ptr;
 #else
     return _ptr;
