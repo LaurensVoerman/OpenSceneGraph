@@ -48,11 +48,14 @@
 
 #endif
 
+#if defined(BSWAP16)
+#include <osg/Types>
+#endif
+
 //  Linux systems provide the byteswap.h header, with
 #if (!defined(BSWAP16) && defined(__linux__))
 //  don't check for obsolete forms defined(linux) and defined(__linux) on the theory that
 //  compilers that predefine only these are so old that byteswap.h probably isn't present.
-# define BOOST_ENDIAN_INTRINSIC_MSG "byteswap.h bswap_16, etc."
 # include <byteswap.h>
 #define BSWAP16(x) bswap_16(x)
 #define BSWAP32(x) bswap_32(x)
