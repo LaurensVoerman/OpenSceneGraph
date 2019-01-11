@@ -313,10 +313,6 @@ void SceneView::init()
 {
     _initCalled = true;
 
-    // force the initialization of the OpenGL extension string
-    // to try and work around a Windows NVidia driver bug circa Oct 2006.
-    osg::isGLExtensionSupported(_renderInfo.getState()->getContextID(),"");
-
     if (_camera.valid() && _initVisitor.valid())
     {
         _initVisitor->reset();
@@ -929,6 +925,58 @@ void SceneView::releaseAllGLObjects()
     if (!_camera) return;
 
     _camera->releaseGLObjects(_renderInfo.getState());
+}
+
+void SceneView::resizeGLObjectBuffers(unsigned int maxSize)
+{
+    struct Resize
+    {
+        unsigned int maxSize = 1;
+
+        Resize(unsigned int ms) : maxSize(ms) {}
+
+        void operator() (osg::Referenced* object)
+        {
+            if (object) object->resizeGLObjectBuffers(maxSize);
+        }
+    } operation(maxSize);
+
+    operation(_localStateSet.get());
+    operation(_updateVisitor.get());
+    operation(_cullVisitor.get());
+    operation(_stateGraph.get());
+    operation(_renderStage.get());
+    operation(_cullVisitorRight.get());
+    operation(_stateGraphRight.get());
+    operation(_renderStageRight.get());
+    operation(_globalStateSet.get());
+    operation(_secondaryStateSet.get());
+    operation(_cameraWithOwnership.get());
+}
+
+void SceneView::releaseGLObjects(osg::State* state) const
+{
+    if (state && state!=_renderInfo.getState()) return;
+
+    struct Release
+    {
+        void operator() (const osg::Referenced* object)
+        {
+            if (object) object->releaseGLObjects();
+        }
+    } operation;
+
+    operation(_localStateSet.get());
+    operation(_updateVisitor.get());
+    operation(_cullVisitor.get());
+    operation(_stateGraph.get());
+    operation(_renderStage.get());
+    operation(_cullVisitorRight.get());
+    operation(_stateGraphRight.get());
+    operation(_renderStageRight.get());
+    operation(_globalStateSet.get());
+    operation(_secondaryStateSet.get());
+    operation(_cameraWithOwnership.get());
 }
 
 void SceneView::flushAllDeletedGLObjects()
