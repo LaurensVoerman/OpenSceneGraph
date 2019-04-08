@@ -366,14 +366,14 @@ void SceneView::updateUniforms()
 
     if ((_activeUniforms & FRAME_NUMBER_UNIFORM) && _frameStamp.valid())
     {
-        osg::Uniform* uniform = _localStateSet->getOrCreateUniform("osg_FrameNumber",osg::Uniform::UNSIGNED_INT);
-        uniform->set(_frameStamp->getFrameNumber());
+        if (!_osg_FrameNumber.valid()) _osg_FrameNumber = _localStateSet->getOrCreateUniform("osg_FrameNumber",osg::Uniform::UNSIGNED_INT);
+        _osg_FrameNumber->set(_frameStamp->getFrameNumber());
     }
 
     if ((_activeUniforms & FRAME_TIME_UNIFORM) && _frameStamp.valid())
     {
-        osg::Uniform* uniform = _localStateSet->getOrCreateUniform("osg_FrameTime",osg::Uniform::FLOAT);
-        uniform->set(static_cast<float>(_frameStamp->getReferenceTime()));
+        if (!_osg_FrameTime.valid()) _osg_FrameTime = _localStateSet->getOrCreateUniform("osg_FrameTime",osg::Uniform::FLOAT);
+        _osg_FrameTime->set(static_cast<float>(_frameStamp->getReferenceTime()));
     }
 
     if ((_activeUniforms & DELTA_FRAME_TIME_UNIFORM) && _frameStamp.valid())
@@ -381,14 +381,14 @@ void SceneView::updateUniforms()
         float delta_frame_time = (_previousFrameTime != 0.0) ? static_cast<float>(_frameStamp->getReferenceTime()-_previousFrameTime) : 0.0f;
         _previousFrameTime = _frameStamp->getReferenceTime();
 
-        osg::Uniform* uniform = _localStateSet->getOrCreateUniform("osg_DeltaFrameTime",osg::Uniform::FLOAT);
-        uniform->set(delta_frame_time);
+        if (!_osg_DeltaFrameTime.valid()) _osg_DeltaFrameTime = _localStateSet->getOrCreateUniform("osg_DeltaFrameTime",osg::Uniform::FLOAT);
+        _osg_DeltaFrameTime->set(delta_frame_time);
     }
 
     if ((_activeUniforms & SIMULATION_TIME_UNIFORM) && _frameStamp.valid())
     {
-        osg::Uniform* uniform = _localStateSet->getOrCreateUniform("osg_SimulationTime",osg::Uniform::FLOAT);
-        uniform->set(static_cast<float>(_frameStamp->getSimulationTime()));
+        if (!_osg_SimulationTime.valid()) _osg_SimulationTime = _localStateSet->getOrCreateUniform("osg_SimulationTime",osg::Uniform::FLOAT);
+        _osg_SimulationTime->set(static_cast<float>(_frameStamp->getSimulationTime()));
     }
 
     if ((_activeUniforms & DELTA_SIMULATION_TIME_UNIFORM) && _frameStamp.valid())
@@ -396,20 +396,20 @@ void SceneView::updateUniforms()
         float delta_simulation_time = (_previousSimulationTime != 0.0) ? static_cast<float>(_frameStamp->getSimulationTime()-_previousSimulationTime) : 0.0f;
         _previousSimulationTime = _frameStamp->getSimulationTime();
 
-        osg::Uniform* uniform = _localStateSet->getOrCreateUniform("osg_DeltaSimulationTime",osg::Uniform::FLOAT);
-        uniform->set(delta_simulation_time);
+        if (!_osg_DeltaSimulationTime.valid()) _osg_DeltaSimulationTime = _localStateSet->getOrCreateUniform("osg_DeltaSimulationTime",osg::Uniform::FLOAT);
+        _osg_DeltaSimulationTime->set(delta_simulation_time);
     }
 
     if (_activeUniforms & VIEW_MATRIX_UNIFORM)
     {
-        osg::Uniform* uniform = _localStateSet->getOrCreateUniform("osg_ViewMatrix",osg::Uniform::FLOAT_MAT4);
-        uniform->set(getViewMatrix());
+        if (!_osg_ViewMatrix.valid()) _osg_ViewMatrix = _localStateSet->getOrCreateUniform("osg_ViewMatrix",osg::Uniform::FLOAT_MAT4);
+        _osg_ViewMatrix->set(getViewMatrix());
     }
 
     if (_activeUniforms & VIEW_MATRIX_INVERSE_UNIFORM)
     {
-        osg::Uniform* uniform = _localStateSet->getOrCreateUniform("osg_ViewMatrixInverse",osg::Uniform::FLOAT_MAT4);
-        uniform->set(osg::Matrix::inverse(getViewMatrix()));
+        if (!_osg_ViewMatrixInverse.valid()) _osg_ViewMatrixInverse = _localStateSet->getOrCreateUniform("osg_ViewMatrixInverse",osg::Uniform::FLOAT_MAT4);
+        _osg_ViewMatrixInverse->set(osg::Matrix::inverse(getViewMatrix()));
     }
 
 }

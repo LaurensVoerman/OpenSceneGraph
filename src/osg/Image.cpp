@@ -32,7 +32,10 @@
 #include <stdlib.h>
 
 #include "dxtctool.h"
-
+#ifdef WIN32
+#define WIN32_LEAN_AND_MEAN 1
+#include <windows.h>
+#endif
 using namespace osg;
 using namespace std;
 
@@ -261,11 +264,76 @@ Image::~Image()
     deallocateData();
 }
 
+unsigned char * osg::Image::allocateData(size_t size, AllocationMode allocationMode)
+{
+    if (allocationMode == USE_NEW_DELETE) return new unsigned char[size];
+    if (allocationMode == USE_MALLOC_FREE) return (unsigned char*)malloc(size);
+    if (allocationMode == USE_MAPPED_FILE) {
+#ifdef WIN32
+        ULARGE_INTEGER uli;
+        uli.QuadPart = size;
+        HANDLE hMMFile = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, uli.HighPart, uli.LowPart, NULL);
+        LPVOID block = MapViewOfFile(hMMFile, FILE_MAP_ALL_ACCESS, 0, 0, 0);
+//#define V1
+#ifdef V1
+        *(HANDLE *)block = hMMFile;
+        return ((unsigned char *)block) + sizeof(HANDLE);
+#else
+        CloseHandle(hMMFile);
+        return ((unsigned char *)block);
+#endif
+        //return new unsigned char[size];
+#else
+        return new unsigned char[size];
+#endif // WIN32
+    }
+    return nullptr;
+}
+
+void osg::Image::deAllocateData(unsigned char * data, AllocationMode allocationMode)
+{
+    if (data) {
+        if (allocationMode == USE_NEW_DELETE) delete[] data;
+        else if (allocationMode == USE_MALLOC_FREE) ::free(data);
+        else if (allocationMode == USE_MAPPED_FILE)
+#ifdef WIN32
+        {
+#ifdef V1
+            LPVOID block = (data - sizeof(HANDLE));
+            HANDLE hMMFile = *(HANDLE *)block;
+            UnmapViewOfFile(block);
+            CloseHandle(hMMFile);
+#else
+            UnmapViewOfFile(data);
+#endif
+        }
+#else
+            delete[] data;
+#endif
+        data = 0;
+    }
+}
+
 void Image::deallocateData()
 {
     if (_data) {
         if (_allocationMode==USE_NEW_DELETE) delete [] _data;
-        else if (_allocationMode==USE_MALLOC_FREE) ::free(_data);
+        else if (_allocationMode == USE_MALLOC_FREE) ::free(_data);
+        else if (_allocationMode == USE_MAPPED_FILE)
+#ifdef WIN32
+        {
+#ifdef V1
+            LPVOID block = (_data - sizeof(HANDLE));
+            HANDLE hMMFile = *(HANDLE *)block;
+            UnmapViewOfFile(block);
+            CloseHandle(hMMFile);
+#else
+            UnmapViewOfFile(_data);
+#endif
+        }
+#else
+        delete[] _data;
+#endif
         _data = 0;
     }
 }
