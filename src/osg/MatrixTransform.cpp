@@ -14,16 +14,14 @@
 
 using namespace osg;
 
-MatrixTransform::MatrixTransform():
-    _inverseDirty(false)
+MatrixTransform::MatrixTransform()
 {
 }
 
 MatrixTransform::MatrixTransform(const MatrixTransform& transform,const CopyOp& copyop):
     Transform(transform,copyop),
     _matrix(transform._matrix),
-    _inverse(transform._inverse),
-    _inverseDirty(transform._inverseDirty)
+    _inverse(transform._inverse)
 {
 }
 
@@ -32,7 +30,6 @@ MatrixTransform::MatrixTransform(const Matrix& mat )
     _referenceFrame = RELATIVE_RF;
 
     _matrix = mat;
-    _inverseDirty = true;
 }
 
 
