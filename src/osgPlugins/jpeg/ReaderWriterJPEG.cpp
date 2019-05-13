@@ -97,6 +97,7 @@ typedef struct {
 typedef stream_source_mgr * stream_src_ptr;
 
 #define INPUT_BUF_SIZE  4096    /* choose an efficiently fread'able size */
+#define imgAllocMode osg::Image::USE_MAPPED_FILE
 
 /*
  * Initialize source --- called by jpeg_read_header
@@ -588,8 +589,11 @@ unsigned char* simage_jpeg_load(std::istream& fin,
         ((j_common_ptr) &cinfo, JPOOL_IMAGE, row_stride, 1);
     width = cinfo.output_width;
     height = cinfo.output_height;
-    buffer = currPtr = new unsigned char [width*height*cinfo.output_components];
-
+#ifdef OSG_IMAGE_HAS_ALLOC
+    buffer = currPtr = osg::Image::allocateData(width*height*cinfo.output_components, imgAllocMode);
+#else
+    buffer = currPtr = new unsigned char[width*height*cinfo.output_components];
+#endif
     /* Step 6: while (scan lines remain to be read) */
     /*           jpeg_read_scanlines(...); */
 
@@ -865,7 +869,7 @@ class ReaderWriterJPEG : public osgDB::ReaderWriter
                 pixelFormat,
                 dataType,
                 imageData,
-                osg::Image::USE_NEW_DELETE);
+                imgAllocMode);
 
             if (exif_orientation>0)
             {

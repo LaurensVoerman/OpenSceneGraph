@@ -215,7 +215,8 @@ class OSG_EXPORT Image : public BufferData
         enum AllocationMode {
             NO_DELETE,
             USE_NEW_DELETE,
-            USE_MALLOC_FREE
+            USE_MALLOC_FREE,
+            USE_MAPPED_FILE
         };
 
         /** Set the method used for deleting data once it goes out of scope. */
@@ -454,6 +455,11 @@ class OSG_EXPORT Image : public BufferData
         static int roudUpToMultiple(int s, int pack);
         static int computeNearestPowerOfTwo(int s,float bias=0.5f);
         static int computeNumberOfMipmapLevels(int s,int t = 1, int r = 1);
+#define OSG_IMAGE_HAS_ALLOC 1
+        /** Allocate a datablock according to allocationMode */
+        static unsigned char* allocateData(size_t size, AllocationMode allocationMode);
+        /** deAllocate a datablock according to allocationMode before it's assigned to an osg::Image - use Image->setData(NULL,USE_NEW_DELETE) if the data is assigned to an Image */
+        static void deAllocateData(unsigned char* data, AllocationMode allocationMode, size_t length);
 
         /** Precomputed mipmaps stuff. */
         typedef std::vector< unsigned int > MipmapDataType;
