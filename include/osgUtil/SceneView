@@ -518,6 +518,13 @@ class OSGUTIL_EXPORT SceneView : public osg::Object, public osg::CullSettings
         void clearArea(int x,int y,int width,int height,const osg::Vec4& color);
 
         osg::ref_ptr<osg::StateSet>                 _localStateSet;
+        osg::ref_ptr <osg::Uniform>                 _osg_FrameNumber;
+        osg::ref_ptr <osg::Uniform>                 _osg_FrameTime;
+        osg::ref_ptr <osg::Uniform>                 _osg_DeltaFrameTime;
+        osg::ref_ptr <osg::Uniform>                 _osg_SimulationTime;
+        osg::ref_ptr <osg::Uniform>                 _osg_DeltaSimulationTime;
+        osg::ref_ptr <osg::Uniform>                 _osg_ViewMatrix;
+        osg::ref_ptr <osg::Uniform>                 _osg_ViewMatrixInverse;
         osg::RenderInfo                             _renderInfo;
 
         bool                                        _initCalled;
