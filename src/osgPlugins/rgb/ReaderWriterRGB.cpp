@@ -414,9 +414,13 @@ static void RawImageGetData(rawImageRec& raw, unsigned char **data )
     OSG_INFO<<"raw.sizeY = "<<raw.sizeY<<std::endl;
     OSG_INFO<<"raw.sizeZ = "<<raw.sizeZ<<std::endl;
     OSG_INFO<<"raw.bpc = "<<raw.bpc<<std::endl;
-
-    *data = new unsigned char [(raw.sizeX)*(raw.sizeY)*(raw.sizeZ)*(raw.bpc)];
-
+#ifdef OSG_IMAGE_HAS_ALLOC
+#define imgAllocMode osg::Image::USE_MAPPED_FILE
+    *data = osg::Image::allocateData((raw.sizeX)*(raw.sizeY)*(raw.sizeZ)*(raw.bpc), imgAllocMode);
+#else
+#define imgAllocMode osg::Image::USE_NEW_DELETE
+	*data = new unsigned char [(raw.sizeX)*(raw.sizeY)*(raw.sizeZ)*(raw.bpc)];
+#endif
     ptr = *data;
     for (i = 0; i < (int)(raw.sizeY); i++)
     {
@@ -525,7 +529,7 @@ class ReaderWriterRGB : public osgDB::ReaderWriter
                 pixelFormat,
                 dataType,
                 data,
-                osg::Image::USE_NEW_DELETE);
+                imgAllocMode);
 
             OSG_INFO << "image read ok "<<s<<"  "<<t<< std::endl;
             return image;
