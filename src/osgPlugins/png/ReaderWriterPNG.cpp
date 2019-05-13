@@ -267,8 +267,14 @@ class ReaderWriterPNG : public osgDB::ReaderWriter
                     png_set_gamma(png, screenGamma, 1.0/2.2);
 
                 png_read_update_info(png, info);
-
+#ifdef OSG_IMAGE_HAS_ALLOC
+                const osg::Image::AllocationMode imgAllocMode = osg::Image::USE_MAPPED_FILE;
+                size_t data_size = png_get_rowbytes(png, info)*height;
+                data = (png_bytep)osg::Image::allocateData(data_size, imgAllocMode);
+#else
+                const osg::Image::AllocationMode imgAllocMode = osg::Image::USE_NEW_DELETE;
                 data = (png_bytep) new unsigned char [png_get_rowbytes(png, info)*height];
+#endif
                 row_p = new png_bytep [height];
 
                 bool StandardOrientation = true;
@@ -324,8 +330,14 @@ class ReaderWriterPNG : public osgDB::ReaderWriter
 
                 //    delete [] data;
 
-                if (pixelFormat==0)
+                if (pixelFormat == 0) {
+#ifdef OSG_IMAGE_HAS_ALLOC
+                    osg::Image::deAllocateData(data, imgAllocMode, data_size);
+#else
+                    delete[] data;
+#endif
                     return ReadResult::FILE_NOT_HANDLED;
+                }
 
                 osg::Image* pOsgImage = new osg::Image();
 
@@ -334,7 +346,7 @@ class ReaderWriterPNG : public osgDB::ReaderWriter
                     pixelFormat,
                     dataType,
                     data,
-                    osg::Image::USE_NEW_DELETE);
+                    imgAllocMode);
 
                 return pOsgImage;
 
