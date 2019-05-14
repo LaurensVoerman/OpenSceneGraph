@@ -49,6 +49,11 @@ public:
 
     virtual const char* className() const { return "cfcells loader"; }
 
+    virtual ReadResult readObject(const std::string& fileName, const osgDB::ReaderWriter::Options* options) const
+    {
+        return readNode(fileName, options);
+    }
+
 	virtual ReadResult readNode(const std::string& file, const Options* opt) const
 	{
 		std::string ext = osgDB::getLowerCaseFileExtension(file);
@@ -70,6 +75,11 @@ public:
 		return 0L;
 
 	}
+
+    virtual ReadResult readObject(std::istream& stream, const osgDB::ReaderWriter::Options* options) const
+    {
+        return readNode(stream, options);
+    }
 
 	virtual ReadResult readNode(std::istream& fin, const Options* options) const
 	{
