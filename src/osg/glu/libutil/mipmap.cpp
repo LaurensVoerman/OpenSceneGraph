@@ -6113,7 +6113,7 @@ static void scaleInternalPackedPixel(int components,
     int i,j,k,xindex;
 
     const char *temp, *temp0;
-    int outindex;
+    int outindex = 0;
 
     int lowx_int, highx_int, lowy_int, highy_int;
     float x_percent, y_percent;
