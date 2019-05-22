@@ -1,6 +1,12 @@
 FILE(GLOB TARGET_SRC *.cpp)
 FILE(GLOB TARGET_H *.h)
 
+SET(DO_NOT_CONCAT_SRC
+    ${CMAKE_CURRENT_SOURCE_DIR}/AnimationManagerBase.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/UpdateMatrixTransform.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/UpdateMorph.cpp
+)
+OSG_COMPILE_CONCAT_GLOB_FIXMYCLASS(TARGET_SRC "${DO_NOT_CONCAT_SRC}")
 SET(TARGET_ADDED_LIBRARIES osgAnimation )
 
 #### end var setup  ###

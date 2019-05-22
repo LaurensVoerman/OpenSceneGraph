@@ -1,5 +1,7 @@
 FILE(GLOB TARGET_SRC *.cpp)
 FILE(GLOB TARGET_H *.h)
 
+OSG_COMPILE_CONCAT_GLOB(TARGET_SRC "${CMAKE_CURRENT_SOURCE_DIR}/LibraryWrapper.cpp")
+
 #### end var setup  ###
 SETUP_PLUGIN(osg)
