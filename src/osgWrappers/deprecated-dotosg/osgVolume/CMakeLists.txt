@@ -1,6 +1,7 @@
 FILE(GLOB TARGET_SRC *.cpp)
 FILE(GLOB TARGET_H *.h)
 
+OSG_COMPILE_CONCAT_GLOB(TARGET_SRC "${CMAKE_CURRENT_SOURCE_DIR}/LibraryWrapper.cpp")
 SET(TARGET_ADDED_LIBRARIES osgVolume )
 
 #### end var setup  ###

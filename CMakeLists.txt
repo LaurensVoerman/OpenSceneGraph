@@ -335,6 +335,7 @@ INCLUDE_DIRECTORIES(SYSTEM ${OPENGL_INCLUDE_DIR})
 #ADD_DEFINITIONS(-D)
 # Platform specific definitions
 
+OPTION(OSG_COMPILE_CONCATENATE "Set to ON speed up the build by concatenating some sources before compiling." ON)
 
 IF(WIN32 AND NOT ANDROID)
     OPTION(OSG_DETERMINE_WIN_VERSION "Wheter to automatically determine current Windows version" ON)

@@ -135,6 +135,13 @@ SET(TARGET_SRC
     VolumeLocator.cpp
     VolumeTile.cpp
 )
+SET(DO_NOT_CONCAT_SRC
+    DataInputStream.cpp
+    DataOutputStream.cpp
+    ReaderWriterIVE.cpp
+)
+OSG_COMPILE_CONCAT_LIST(TARGET_SRC "${DO_NOT_CONCAT_SRC}")
+
 SET(TARGET_H
     AlphaFunc.h
     AnimationPathCallback.h
