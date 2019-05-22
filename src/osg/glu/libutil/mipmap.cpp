@@ -39,9 +39,6 @@
     #define GL_PROXY_TEXTURE_3D 0x8070
 #endif
 
-// #include "gluos.h"
-// #include <GL/glu.h>
-
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -49,6 +46,7 @@
 #include <limits.h>                /* UINT_MAX */
 #include <math.h>
 #include <osg/Notify>
+#include <osg/Endian>
 
 namespace osg
 {
@@ -354,13 +352,23 @@ static int nearestPower(GLuint value)
     }
 }
 
+#if defined(BSWAP16)
+#define __GLU_SWAP_2_BYTES(s)\
+(GLushort)BSWAP16(*(GLushort*)s)
+#else
 #define __GLU_SWAP_2_BYTES(s)\
 (GLushort)(((GLushort)((const GLubyte*)(s))[1])<<8 | ((const GLubyte*)(s))[0])
+#endif
 
+#if defined(BSWAP32)
+#define __GLU_SWAP_4_BYTES(s)\
+(GLuint)BSWAP32(*(GLuint*)s)
+#else
 #define __GLU_SWAP_4_BYTES(s)\
 (GLuint)(((GLuint)((const GLubyte*)(s))[3])<<24 | \
         ((GLuint)((const GLubyte*)(s))[2])<<16 | \
         ((GLuint)((const GLubyte*)(s))[1])<<8  | ((const GLubyte*)(s))[0])
+#endif
 
 static void halveImage(GLint components, GLuint width, GLuint height,
                        const GLushort *datain, GLushort *dataout)
