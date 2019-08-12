@@ -4,7 +4,7 @@
 SET(OPENSCENEGRAPH_MAJOR_VERSION 3)
 SET(OPENSCENEGRAPH_MINOR_VERSION 7)
 SET(OPENSCENEGRAPH_PATCH_VERSION 0)
-SET(OPENSCENEGRAPH_SOVERSION 160)
+SET(OPENSCENEGRAPH_SOVERSION 200)
 
 
 # set to 0 when not a release candidate, non zero means that any generated
@@ -42,6 +42,8 @@ IF(APPLE)
     MESSAGE(STATUS "OSG_OSX_VERSION=${OSG_OSX_VERSION}")
 ENDIF()
 
+PROJECT(OpenSceneGraph)
+
 # Set OSX architecture flags here, since they must be specified before
 # creating the actual OSG project.
 # Note that the CMAKE_OSX_* variables are not well documented in
@@ -52,7 +54,7 @@ ENDIF()
 
 IF(ANDROID)
     SET(OSG_WINDOWING_SYSTEM "None" CACHE STRING "Windowing system type for graphics window creation; options: None.")
-ELSEIF(WIN32)
+ELSEIF(WIN32 OR MINGW)
     SET(OSG_WINDOWING_SYSTEM "Win32" CACHE STRING "Windowing system type for graphics window creation; options: Win32 or None.")
 ELSEIF(APPLE)
     # custom option to flag an iOS build
@@ -120,7 +122,6 @@ ELSE()
     SET(OSG_WINDOWING_SYSTEM "X11" CACHE STRING "Windowing system type for graphics window creation; options: X11 or None.")
 ENDIF()
 
-PROJECT(OpenSceneGraph)
 
 SET(OPENSCENEGRAPH_VERSION ${OPENSCENEGRAPH_MAJOR_VERSION}.${OPENSCENEGRAPH_MINOR_VERSION}.${OPENSCENEGRAPH_PATCH_VERSION})
 
@@ -506,6 +507,12 @@ ENDIF()
 
 OPTION(OSG_GL_LIBRARY_STATIC "Set to ON to statically link with OpenGL/GLES library." OFF)
 
+IF (OSG_BUILD_PLATFORM_IPHONE OR ANDROID)
+    OPTION(OSG_TEXT_USE_FONTCONFIG "Set to ON to enable attempt to use FontConfig in osgText." OFF)
+ELSE ()
+    OPTION(OSG_TEXT_USE_FONTCONFIG "Set to OFF to disable attempt to use FontConfig in osgText." ON)
+ENDIF ()
+
 # Map the OSG_GL*_AVAILABLE settings to OSG_GL_* settings
 IF (OSG_GLES2_AVAILABLE OR OSG_GLES3_AVAILABLE OR OSG_GL3_AVAILABLE)
     OPTION(OSG_GL_DISPLAYLISTS_AVAILABLE "Set to OFF to disable use of OpenGL display lists." OFF)
@@ -745,7 +752,6 @@ ELSE()
     FIND_PACKAGE(COLLADA)
     FIND_PACKAGE(FBX)
     FIND_PACKAGE(ZLIB)
-    FIND_PACKAGE(OpenVRML)
     FIND_PACKAGE(GDAL)
     FIND_PACKAGE(GTA)
     FIND_PACKAGE(CURL)
@@ -1387,4 +1393,5 @@ ADD_CUSTOM_TARGET(uninstall
   "${CMAKE_COMMAND}" -P "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake")
 
 #
-
+include(FeatureSummary)
+feature_summary(WHAT ALL)
