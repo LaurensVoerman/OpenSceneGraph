@@ -1,3 +1,173 @@
+Thu, 25 Jul 2019 14:58:17 +0100
+Author : Robert Osfield
+Changed the #extension enable
+
+Thu, 25 Jul 2019 14:10:01 +0100
+Author : Robert Osfield
+Change the DefaultFont so that it's managemed via the ObjectCache to enabl it to be release and cleared in a central manner. Added call to Registry::releaseGLObjects() to osgViewer/Renderer.cpp to enable automatic clean up of objects in the ObjectCache.
+
+Thu, 25 Jul 2019 12:48:21 +0100
+Author : Robert Osfield
+Added readObject() implementations
+
+Thu, 25 Jul 2019 10:39:34 +0100
+Author : Robert Osfield
+Added ReaderWriterOBJ::readObject(..) implementations to address issue with using osgconv
+
+Mon, 22 Jul 2019 19:22:16 +0100
+Author : Robert Osfield
+Updates for 3.6.4-rc8
+
+Mon, 22 Jul 2019 17:20:10 +0100
+Author : Robert Osfield
+Added handling of iOS and Android to make sure FontConfig is only used for Desktop builds
+
+Fri, 19 Jul 2019 09:20:50 +0100
+Author : Robert Osfield
+Updated for rc7
+
+Fri, 19 Jul 2019 09:10:02 +0100
+Author : OpenSceneGraph git repository
+Merge pull request #797 from wangii/OpenSceneGraph-3.6 fix u64 and i64 allocation, setArray bug 
+
+Fri, 19 Jul 2019 14:06:20 +0800
+Author : Linan Wang
+fix typo
+
+Fri, 19 Jul 2019 13:28:25 +0800
+Author : Linan Wang
+fix u64 and i64 allocation, setArray bug
+
+Thu, 18 Jul 2019 12:44:59 +0100
+Author : Robert Osfield
+Fixed indentation
+
+Thu, 18 Jul 2019 09:13:25 +0800
+Author : Long Huan
+Add OutputTextureFiles OptionAdd OutputTextureFiles Option support Write out the texture images to file
+
+
+Wed, 17 Jul 2019 15:07:38 +0800
+Author : Long Huan
+Update OBJWriterNodeVisitor.cpp
+
+Wed, 17 Jul 2019 14:52:10 +0800
+Author : Long Huan
+fix obj-Plugin export texture fileFix obj-plugin to support export texture file
+
+
+Thu, 18 Jul 2019 12:18:04 +0100
+Author : Robert Osfield
+Added handling of zero radius models
+
+Thu, 18 Jul 2019 11:16:08 +0100
+Author : Robert Osfield
+Removed references OpenVRML plugin
+
+Thu, 18 Jul 2019 11:14:10 +0100
+Author : Robert Osfield
+Removed vrml plugin from build as OpenVRML plugin relies on no longer supported functionality
+
+Thu, 18 Jul 2019 10:34:53 +0100
+Author : Robert Osfield
+Added calls to curl_global_init and curl_global_cleanup to improve the robustness of threaded curl plugin usage
+
+Tue, 16 Jul 2019 13:50:02 +0100
+Author : Robert Osfield
+Updated for rc6
+
+Tue, 16 Jul 2019 11:53:24 +0100
+Author : OpenSceneGraph git repository
+Merge pull request #789 from rhabacker/OpenSceneGraph-3.6cmake: Add find_package module for fontconfig
+
+Tue, 16 Jul 2019 11:32:10 +0100
+Author : OpenSceneGraph git repository
+Merge pull request #791 from aluaces/mingw-osg_windowing_systemAvoid that mingw cross-compilation choosing X11 as the windowing system.
+
+Tue, 16 Jul 2019 11:08:25 +0200
+Author : Alberto Luaces
+Avoid that mingw cross-compilation choosing X11 as the windowing system.I have moved the PROJECT stanza before the conditionals, because
+otherwise expressions like IF(MINGW) always fail.
+
+
+Mon, 15 Jul 2019 18:54:30 +0200
+Author : Ralf Habacker
+cmake: Add summary information to get an idea of what dependencies might be missing
+
+Mon, 15 Jul 2019 18:52:14 +0200
+Author : Ralf Habacker
+cmake: Added find_package module for fontconfig which is not available with cmake < 3.14This file has been taken from cmake 3.14
+
+
+Mon, 15 Jul 2019 17:06:51 +0100
+Author : Robert Osfield
+Updated for 3.6.4-rc5
+
+Mon, 15 Jul 2019 16:16:45 +0100
+Author : Robert Osfield
+Adopted the matrix transformation code from Text
+
+Mon, 15 Jul 2019 16:13:57 +0100
+Author : Robert Osfield
+Added test of picking
+
+Mon, 15 Jul 2019 15:05:05 +0100
+Author : Robert Osfield
+Cuietened down the reporting of failure to find fontconfig
+
+Mon, 15 Jul 2019 14:11:11 +0100
+Author : OpenSceneGraph git repository
+Merge pull request #788 from rhabacker/3.6-obj-plugin-fixes3.6 obj plugin fixes
+
+Tue, 16 Jan 2018 10:23:36 +0100
+Author : Ralf Habacker
+obj plugin: Fix bug not adding first vertex index on writing GL_LINExxx array types
+
+Mon, 15 Jan 2018 14:22:18 +0100
+Author : Ralf Habacker
+obj plugin: Fix not writing material shininess
+
+Mon, 15 Jul 2019 14:29:26 +0200
+Author : Ralf Habacker
+obj plugin: add option "NsIfNotPresent=" for setting the specular exponent of a material if not present
+
+Mon, 25 Sep 2017 13:59:13 +0200
+Author : Ralf Habacker
+obj plugin: Fix bug not using specular color (Ks) for illumination mode > 2See paragraph "Illumination models" at http://paulbourke.net/dataformats/mtl/ for details.
+
+
+Mon, 15 Jul 2019 11:14:47 +0100
+Author : OpenSceneGraph git repository
+Merge pull request #786 from rhabacker/OpenSceneGraph-3.6Fix 'Incorrect default location for true type fonts on openSUSE'
+
+Tue, 2 Jul 2019 22:56:02 +0200
+Author : Ralf Habacker
+Fix 'Incorrect default location for true type fonts on openSUSE'https://github.com/openscenegraph/OpenSceneGraph/issues/778
+
+
+Fri, 12 Jul 2019 17:00:20 +0100
+Author : Robert Osfield
+Added check against any empty _segments to avoid undefined behaviour
+
+Fri, 12 Jul 2019 16:16:43 +0100
+Author : Robert Osfield
+Removed debug info for constructor and destructors
+
+Fri, 12 Jul 2019 16:09:12 +0100
+Author : Robert Osfield
+Added FrameBufferAttachment::resizeGLObjectBuffers(..) and releaseGLObjects(..) methods
+
+Tue, 2 Jul 2019 20:37:02 +0200
+Author : StefanBruens
+Fix wxWidgets COMPONENTS specification, deprecated usage broken with CMake 3.14Current FindWxWidgets.cmake allows to specify OPTIONAL components, unfortunately
+this broke the (deprecated) use of wxWidgets_USE_LIBS.
+
+Fixes: #779
+
+Tue, 2 Jul 2019 20:21:45 +0100
+Author : Robert Osfield
+Updated ChangeLog for rc4
+
 Tue, 2 Jul 2019 20:21:05 +0100
 Author : Robert Osfield
 Updated SO number to refect change to the Drawable header inline method status
