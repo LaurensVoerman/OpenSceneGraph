@@ -191,6 +191,10 @@ typedef char GLchar;
 #endif
 
 #ifndef GL_VERSION_3_0
+//GL_ARB_half_float_vertex - https://www.khronos.org/registry/OpenGL/extensions/ARB/ARB_half_float_vertex.txt
+typedef unsigned short GLhalf;
+#define GL_HALF_FLOAT                            0x140B
+
 #define GL_MAX_VARYING_COMPONENTS                0x8B4B
 #endif
 

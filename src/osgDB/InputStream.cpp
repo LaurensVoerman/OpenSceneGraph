@@ -185,6 +185,21 @@ InputStream& InputStream::operator>>( osg::Vec3d& v )
 InputStream& InputStream::operator>>( osg::Vec4d& v )
 { *this >> v.x() >> v.y() >> v.z() >> v.w(); return *this; }
 
+InputStream& InputStream::operator>>(osg::Vec2h& v)
+{
+    *this >> v.x() >> v.y(); return *this;
+}
+
+InputStream& InputStream::operator>>(osg::Vec3h& v)
+{
+    *this >> v.x() >> v.y() >> v.z(); return *this;
+}
+
+InputStream& InputStream::operator>>(osg::Vec4h& v)
+{
+    *this >> v.x() >> v.y() >> v.z() >> v.w(); return *this;
+}
+
 
 InputStream& InputStream::operator>>( osg::Quat& q )
 {
@@ -567,6 +582,27 @@ osg::ref_ptr<osg::Array> InputStream::readArray()
         }
         break;
 
+    case ID_VEC2H_ARRAY:
+        {
+            osg::Vec2hArray* va = new osg::Vec2hArray;
+            readArrayImplementation( va, 2, HALF_FLOAT_SIZE);
+            array = va;
+        }
+        break;
+    case ID_VEC3H_ARRAY:
+        {
+            osg::Vec3hArray* va = new osg::Vec3hArray;
+            readArrayImplementation( va, 3, HALF_FLOAT_SIZE);
+            array = va;
+        }
+        break;
+    case ID_VEC4H_ARRAY:
+        {
+            osg::Vec4hArray* va = new osg::Vec4hArray;
+            readArrayImplementation( va, 4, HALF_FLOAT_SIZE);
+            array = va;
+        }
+        break;
     default:
         throwException( "InputStream::readArray(): Unsupported array type." );
     }

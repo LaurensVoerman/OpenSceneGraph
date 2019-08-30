@@ -77,7 +77,10 @@ class OSGUTIL_EXPORT Statistics : public osg::PrimitiveFunctor
         virtual void setVertexArray(unsigned int count,const osg::Vec3d*) { _vertexCount += count; }
         virtual void setVertexArray(unsigned int count,const osg::Vec2d*) { _vertexCount += count; }
         virtual void setVertexArray(unsigned int count,const osg::Vec4d*) { _vertexCount += count; }
-
+        virtual void setVertexArray(unsigned int count,const osg::Vec3h*) { _vertexCount += count; }
+        virtual void setVertexArray(unsigned int count,const osg::Vec2h*) { _vertexCount += count; }
+        virtual void setVertexArray(unsigned int count,const osg::Vec4h*) { _vertexCount += count; }
+        virtual bool vertexArrayValid() { return true; }
         virtual void drawArrays(GLenum mode,GLint,GLsizei count);
         virtual void drawElements(GLenum mode,GLsizei count,const GLubyte*);
         virtual void drawElements(GLenum mode,GLsizei count,const GLushort*);

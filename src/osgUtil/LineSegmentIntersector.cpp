@@ -240,8 +240,8 @@ struct IntersectFunctor
         // const osg::Vec3& le = startend.second;
 
         Vec3 T = _start - v0;
-        Vec3 E2 = v2 - v0;
-        Vec3 E1 = v1 - v0;
+        Vec3 E2 = v2; E2 -= v0;
+        Vec3 E1 = v1; E1 -= v0;
 
         Vec3 P =  _d ^ E2;
 

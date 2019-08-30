@@ -39,6 +39,9 @@ public:
 
     virtual void setVertexArray(unsigned int,const osg::Vec4d* )
     {}
+    virtual void setVertexArray(unsigned int, const Vec2h*) {}
+    virtual void setVertexArray(unsigned int, const Vec3h*) {}
+    virtual void setVertexArray(unsigned int, const Vec4h*) {}
 
     virtual void begin(GLenum mode) {
         _modeCache = mode;

@@ -189,6 +189,10 @@ class RemapArray : public osg::ArrayVisitor
         virtual void apply(osg::Vec3dArray& array) { remap(array); }
         virtual void apply(osg::Vec4dArray& array) { remap(array); }
 
+        virtual void apply(osg::Vec2hArray& array) { remap(array); }
+        virtual void apply(osg::Vec3hArray& array) { remap(array); }
+        virtual void apply(osg::Vec4hArray& array) { remap(array); }
+
         virtual void apply(osg::MatrixfArray& array) { remap(array); }
 protected:
 
@@ -1049,6 +1053,10 @@ public:
     virtual void apply(osg::Vec2dArray& array) { remap(array); }
     virtual void apply(osg::Vec3dArray& array) { remap(array); }
     virtual void apply(osg::Vec4dArray& array) { remap(array); }
+
+    virtual void apply(osg::Vec2hArray& array) { remap(array); }
+    virtual void apply(osg::Vec3hArray& array) { remap(array); }
+    virtual void apply(osg::Vec4hArray& array) { remap(array); }
 
     virtual void apply(osg::MatrixfArray& array) { remap(array); }
 };

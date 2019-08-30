@@ -77,6 +77,25 @@ public:
     {
         notify(WARN)<<"Triangle Functor does not support Vec4d* vertex arrays"<<std::endl;
     }
+    virtual void setVertexArray(unsigned int, const Vec2h*)
+    {
+        notify(WARN) << "Triangle Functor does not support Vec2h* vertex arrays" << std::endl;
+    }
+
+    virtual void setVertexArray(unsigned int, const Vec3h*)
+    {
+        notify(WARN) << "Triangle Functor does not support Vec3h* vertex arrays" << std::endl;
+    }
+
+    virtual void setVertexArray(unsigned int, const Vec4h*)
+    {
+        notify(WARN) << "Triangle Functor does not support Vec4h* vertex arrays" << std::endl;
+    }
+
+    virtual bool vertexArrayValid()
+    {
+        return (_vertexArraySize != 0);
+    }
 
     virtual void drawArrays(GLenum mode,GLint first,GLsizei count)
     {

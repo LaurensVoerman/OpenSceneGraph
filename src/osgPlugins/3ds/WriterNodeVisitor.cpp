@@ -155,6 +155,9 @@ public:
       virtual void setVertexArray(unsigned int ,const osg::Vec3d*) {}
 
       virtual void setVertexArray(unsigned int,const osg::Vec4d*) {}
+      virtual void setVertexArray(unsigned int, const osg::Vec2h*) {}
+      virtual void setVertexArray(unsigned int, const osg::Vec3h*) {}
+      virtual void setVertexArray(unsigned int, const osg::Vec4h*) {}
 
 
       // operator for triangles

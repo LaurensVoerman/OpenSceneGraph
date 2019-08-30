@@ -35,6 +35,9 @@ class OSGUTIL_EXPORT ReversePrimitiveFunctor : public osg::PrimitiveIndexFunctor
         virtual void setVertexArray(unsigned int , const osg::Vec2d* ) {}
         virtual void setVertexArray(unsigned int , const osg::Vec3d* ) {}
         virtual void setVertexArray(unsigned int , const osg::Vec4d* ) {}
+        virtual void setVertexArray(unsigned int , const osg::Vec2h*) {}
+        virtual void setVertexArray(unsigned int , const osg::Vec3h*) {}
+        virtual void setVertexArray(unsigned int , const osg::Vec4h*) {}
 
         virtual void drawArrays(GLenum mode,GLint first,GLsizei count);
         virtual void drawElements(GLenum mode,GLsizei count, const GLubyte* indices);

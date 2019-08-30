@@ -93,6 +93,7 @@ SET(TARGET_H
     ${HEADER_PATH}/GraphicsContext
     ${HEADER_PATH}/GraphicsThread
     ${HEADER_PATH}/Group
+    ${HEADER_PATH}/Half
     ${HEADER_PATH}/Hint
     ${HEADER_PATH}/Identifier
     ${HEADER_PATH}/Image
@@ -205,6 +206,7 @@ SET(TARGET_H
     ${HEADER_PATH}/Vec2b
     ${HEADER_PATH}/Vec2d
     ${HEADER_PATH}/Vec2f
+    ${HEADER_PATH}/Vec2h
     ${HEADER_PATH}/Vec2i
     ${HEADER_PATH}/Vec2s
     ${HEADER_PATH}/Vec2ub
@@ -214,6 +216,7 @@ SET(TARGET_H
     ${HEADER_PATH}/Vec3b
     ${HEADER_PATH}/Vec3d
     ${HEADER_PATH}/Vec3f
+    ${HEADER_PATH}/Vec3h
     ${HEADER_PATH}/Vec3i
     ${HEADER_PATH}/Vec3s
     ${HEADER_PATH}/Vec3ub
@@ -223,6 +226,7 @@ SET(TARGET_H
     ${HEADER_PATH}/Vec4b
     ${HEADER_PATH}/Vec4d
     ${HEADER_PATH}/Vec4f
+    ${HEADER_PATH}/Vec4h
     ${HEADER_PATH}/Vec4i
     ${HEADER_PATH}/Vec4s
     ${HEADER_PATH}/Vec4ub
@@ -309,6 +313,7 @@ SET(TARGET_SRC
     GraphicsContext.cpp
     GraphicsThread.cpp
     Group.cpp
+    Half.cpp
     Hint.cpp
     Identifier.cpp
     Image.cpp

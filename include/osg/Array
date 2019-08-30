@@ -37,6 +37,9 @@
 #include <osg/Vec2>
 #include <osg/Vec3>
 #include <osg/Vec4>
+#include <osg/Vec2h>
+#include <osg/Vec3h>
+#include <osg/Vec4h>
 #include <osg/Vec2d>
 #include <osg/Vec3d>
 #include <osg/Vec4d>
@@ -118,7 +121,11 @@ class OSG_EXPORT Array : public BufferData
             UInt64ArrayType   = 36,
             Int64ArrayType    = 37,
 
-            LastArrayType     = 37
+            Vec2hArrayType    = 38,
+            Vec3hArrayType    = 39,
+            Vec4hArrayType    = 40,
+
+            LastArrayType     = 40
                 // If new array types are added, update this and
                 // update Array::className() in src/osg/Array.cpp.
                 // Array::Type values are from ArrayType to
@@ -461,6 +468,11 @@ typedef TemplateArray<Quat,Array::QuatArrayType,4,GL_DOUBLE>                    
 typedef TemplateIndexArray<GLuint64,Array::UInt64ArrayType,1,GL_UNSIGNED_INT64_ARB> UInt64Array;
 typedef TemplateIndexArray<GLint64,Array::Int64ArrayType,1,GL_INT64_ARB>            Int64Array;
 
+typedef TemplateArray<Vec2h, Array::Vec2hArrayType, 2, GL_HALF_FLOAT>           Vec2hArray;
+typedef TemplateArray<Vec3h, Array::Vec3hArrayType, 3, GL_HALF_FLOAT>           Vec3hArray;
+typedef TemplateArray<Vec4h, Array::Vec4hArrayType, 4, GL_HALF_FLOAT>           Vec4hArray;
+
+
 class ArrayVisitor
 {
     public:
@@ -518,6 +530,10 @@ class ArrayVisitor
 
         virtual void apply(UInt64Array&) {}
         virtual void apply(Int64Array&)  {}
+
+        virtual void apply(Vec2hArray&) {}
+        virtual void apply(Vec3hArray&) {}
+        virtual void apply(Vec4hArray&) {}
 };
 
 class ConstArrayVisitor
@@ -577,6 +593,10 @@ class ConstArrayVisitor
 
         virtual void apply(const UInt64Array&) {}
         virtual void apply(const Int64Array&)  {}
+
+        virtual void apply(const Vec2hArray&) {}
+        virtual void apply(const Vec3hArray&) {}
+        virtual void apply(const Vec4hArray&) {}
 };
 
 
@@ -637,6 +657,10 @@ class ValueVisitor
 
         virtual void apply(GLuint64&){}
         virtual void apply(GLint64&){}
+
+        virtual void apply(Vec2h&) {}
+        virtual void apply(Vec3h&) {}
+        virtual void apply(Vec4h&) {}
 };
 
 class ConstValueVisitor
@@ -696,6 +720,10 @@ class ConstValueVisitor
 
         virtual void apply(const GLuint64&){}
         virtual void apply(const GLint64&){}
+
+        virtual void apply(const Vec2h&) {}
+        virtual void apply(const Vec3h&) {}
+        virtual void apply(const Vec4h&) {}
 };
 
 template<typename T, Array::Type ARRAYTYPE, int DataSize, int DataType>

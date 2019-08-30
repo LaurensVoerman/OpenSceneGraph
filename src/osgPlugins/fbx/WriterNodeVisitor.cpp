@@ -73,6 +73,10 @@ public:
 
     virtual void setVertexArray(unsigned int, const osg::Vec4d*) {}
 
+    virtual void setVertexArray(unsigned int, const osg::Vec2h*) {}
+    virtual void setVertexArray(unsigned int, const osg::Vec3h*) {}
+    virtual void setVertexArray(unsigned int, const osg::Vec4h*) {}
+
     // operator for triangles
     void writeTriangle(unsigned int i1, unsigned int i2, unsigned int i3)
     {
@@ -599,13 +603,13 @@ void WriterNodeVisitor::buildFaces(const std::string& name,
     }
     setControlPointAndNormalsAndUV(geometryList, index_vert, texcoords, mesh);
 
-	_geometryList.clear();
-	_listTriangles.clear();
-	_texcoords = false;
-	_drawableNum = 0;
-	for (MaterialMap::iterator it = _materialMap.begin(); it != _materialMap.end(); ++it)
-		it->second.setIndex(-1);
-	_lastMaterialIndex = 0;
+    _geometryList.clear();
+    _listTriangles.clear();
+    _texcoords = false;
+    _drawableNum = 0;
+    for (MaterialMap::iterator it = _materialMap.begin(); it != _materialMap.end(); ++it)
+        it->second.setIndex(-1);
+    _lastMaterialIndex = 0;
 }
 
 void WriterNodeVisitor::createListTriangle(const osg::Geometry* geo,

@@ -153,6 +153,7 @@ public:
         RW_BOUNDINGBOXF, RW_BOUNDINGBOXD,
         RW_BOUNDINGSPHEREF, RW_BOUNDINGSPHERED,
         RW_VECTOR, RW_MAP
+        , RW_VEC2H, RW_VEC3H, RW_VEC4H
     };
 
     enum Usage

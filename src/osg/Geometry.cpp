@@ -1118,11 +1118,23 @@ void Geometry::accept(PrimitiveFunctor& functor) const
     case(Array::Vec4dArrayType):
         functor.setVertexArray(vertices->getNumElements(),static_cast<const Vec4d*>(vertices->getDataPointer()));
         break;
+    case(Array::Vec2hArrayType):
+        functor.setVertexArray(vertices->getNumElements(),static_cast<const Vec2h*>(vertices->getDataPointer()));
+        break;
+    case(Array::Vec3hArrayType):
+        functor.setVertexArray(vertices->getNumElements(),static_cast<const Vec3h*>(vertices->getDataPointer()));
+        break;
+    case(Array::Vec4hArrayType):
+        functor.setVertexArray(vertices->getNumElements(),static_cast<const Vec4h*>(vertices->getDataPointer()));
+        break;
     default:
         OSG_WARN<<"Warning: Geometry::accept(PrimitiveFunctor&) cannot handle Vertex Array type"<<vertices->getType()<<std::endl;
         return;
     }
-
+    if (!functor.vertexArrayValid()) {
+        OSG_WARN << "Warning: Geometry::accept(PrimitiveFunctor&) failed to handle Vertex Array type" << vertices->getType() << std::endl;
+        return;
+    }
     for(PrimitiveSetList::const_iterator itr=_primitives.begin();
         itr!=_primitives.end();
         ++itr)
@@ -1168,6 +1180,15 @@ void Geometry::accept(PrimitiveIndexFunctor& functor) const
         break;
     case(Array::Vec4dArrayType):
         functor.setVertexArray(vertices->getNumElements(),static_cast<const Vec4d*>(vertices->getDataPointer()));
+        break;
+    case(Array::Vec2hArrayType):
+        functor.setVertexArray(vertices->getNumElements(),static_cast<const Vec2h*>(vertices->getDataPointer()));
+        break;
+    case(Array::Vec3hArrayType):
+        functor.setVertexArray(vertices->getNumElements(),static_cast<const Vec3h*>(vertices->getDataPointer()));
+        break;
+    case(Array::Vec4hArrayType):
+        functor.setVertexArray(vertices->getNumElements(),static_cast<const Vec4h*>(vertices->getDataPointer()));
         break;
     default:
         OSG_WARN<<"Warning: Geometry::accept(PrimitiveIndexFunctor&) cannot handle Vertex Array type"<<vertices->getType()<<std::endl;

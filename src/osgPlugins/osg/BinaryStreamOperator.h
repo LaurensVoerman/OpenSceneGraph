@@ -211,6 +211,12 @@ public:
         l = (unsigned long)value;
     }
 
+    virtual void readHalf(osg::half& f)
+    {
+        _in->read((char*)& f, osgDB::HALF_SIZE);
+        if (_byteSwap) osg::swapBytes((char*)& f, osgDB::HALF_SIZE);
+    }
+
     virtual void readFloat( float& f )
     {
         _in->read( (char*)&f, osgDB::FLOAT_SIZE );

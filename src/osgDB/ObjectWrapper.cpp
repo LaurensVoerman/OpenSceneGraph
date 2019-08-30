@@ -34,7 +34,7 @@
 #include <osgDB/Registry>
 
 // pull in OSG headers to just introduce their GL defines for GL3/GLES compatibility
-#include <osg/AlphaFunc>
+//#include <osg/AlphaFunc> GL_ALPHA_TEST moved to GLdefines 2015_07_22
 #include <osg/Material>
 #include <osg/LineStipple>
 #include <osg/PolygonStipple>
@@ -676,6 +676,9 @@ ObjectWrapperManager::ObjectWrapperManager()
     arrayTable.add( "Vec2uiArray", ID_VEC2UI_ARRAY );
     arrayTable.add( "Vec3uiArray", ID_VEC3UI_ARRAY );
     arrayTable.add( "Vec4uiArray", ID_VEC4UI_ARRAY );
+    arrayTable.add( "Vec2hArray", ID_VEC2H_ARRAY);
+    arrayTable.add( "Vec3hArray", ID_VEC3H_ARRAY);
+    arrayTable.add( "Vec4hArray", ID_VEC4H_ARRAY);
 
     IntLookup& primitiveTable = _globalMap["PrimitiveType"];
 

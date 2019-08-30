@@ -23,6 +23,9 @@
 #include <osg/Vec2d>
 #include <osg/Vec3d>
 #include <osg/Vec4d>
+#include <osg/Vec2h>
+#include <osg/Vec3h>
+#include <osg/Vec4h>
 #include <osg/MixinVector>
 
 #include <osg/BufferObject>
@@ -86,6 +89,26 @@ public:
      */
     virtual void setVertexArray(unsigned int count,const Vec4d* vertices) = 0;
 
+    /** Sets the array of vertices used to describe the primitives. Somehow
+     *  mimics the OpenGL \c glVertexPointer() function.
+     */
+    virtual void setVertexArray(unsigned int count, const Vec2h* vertices) = 0;
+
+    /** Sets the array of vertices used to describe the primitives. Somehow
+     *  mimics the OpenGL \c glVertexPointer() function.
+     */
+    virtual void setVertexArray(unsigned int count, const Vec3h* vertices) = 0;
+
+    /** Sets the array of vertices used to describe the primitives. Somehow
+     *  mimics the OpenGL \c glVertexPointer() function.
+     */
+    virtual void setVertexArray(unsigned int count, const Vec4h* vertices) = 0;
+
+    /** Test vertexarray pointer
+     *  when false it's not safe to call drawArrays or drawElements
+     */
+    virtual bool vertexArrayValid() = 0;// { return true; }
+
     /// Mimics the OpenGL \c glDrawArrays() function.
     virtual void drawArrays(GLenum mode,GLint first,GLsizei count) = 0;
 
@@ -112,6 +135,10 @@ public:
     virtual void setVertexArray(unsigned int count,const Vec2d* vertices) = 0;
     virtual void setVertexArray(unsigned int count,const Vec3d* vertices) = 0;
     virtual void setVertexArray(unsigned int count,const Vec4d* vertices) = 0;
+
+    virtual void setVertexArray(unsigned int count,const Vec2h* vertices) = 0;
+    virtual void setVertexArray(unsigned int count,const Vec3h* vertices) = 0;
+    virtual void setVertexArray(unsigned int count,const Vec4h* vertices) = 0;
 
     virtual void drawArrays(GLenum mode,GLint first,GLsizei count) = 0;
     virtual void drawElements(GLenum mode,GLsizei count,const GLubyte* indices) = 0;

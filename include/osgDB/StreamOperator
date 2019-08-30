@@ -6,6 +6,7 @@
 #include <osg/Referenced>
 #include <osgDB/Export>
 #include <osgDB/DataTypes>
+#include <osg/Half>
 
 namespace osgDB
 {
@@ -114,6 +115,7 @@ public:
     virtual void readUInt( unsigned int& i ) = 0;
     virtual void readLong( long& l ) = 0;
     virtual void readULong( unsigned long& l ) = 0;
+    virtual void readHalf( osg::half& f ) = 0;
     virtual void readFloat( float& f ) = 0;
     virtual void readDouble( double& d ) = 0;
     virtual void readString( std::string& s ) = 0;

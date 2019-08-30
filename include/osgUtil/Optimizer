@@ -89,6 +89,7 @@ class OSGUTIL_EXPORT Optimizer
             VERTEX_POSTTRANSFORM =      (1 << 19),
             VERTEX_PRETRANSFORM =       (1 << 20),
             BUFFER_OBJECT_SETTINGS =    (1 << 21),
+            SHORT_ARRAYS =              (1 << 22),
             DEFAULT_OPTIMIZATIONS = FLATTEN_STATIC_TRANSFORMS |
                                 REMOVE_REDUNDANT_NODES |
                                 REMOVE_LOADED_PROXY_NODES |
@@ -864,6 +865,16 @@ class OSGUTIL_EXPORT Optimizer
                 bool _changeVertexArrayObject, _valueVertexArrayObject;
                 bool _changeDisplayList, _valueDisplayList;
 
+        };
+        /** For all geometry apply settings.*/
+        class OSGUTIL_EXPORT ShortArrayVisitor : public BaseOptimizerVisitor
+        {
+        public:
+
+            ShortArrayVisitor(Optimizer* optimizer = 0) :
+                BaseOptimizerVisitor(optimizer, Optimizer::SHORT_ARRAYS) {}
+
+            virtual void apply(osg::Geometry& geometry);
         };
 };
 
