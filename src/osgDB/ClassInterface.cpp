@@ -121,6 +121,7 @@ public:
     virtual void readUInt( unsigned int& i ) { read(i);}
     virtual void readLong( long& l ) { read(l); }
     virtual void readULong( unsigned long& l ) { read(l); }
+    virtual void readHalf( osg::half& f ) { read(f); }
     virtual void readFloat( float& f ) { read(f); }
     virtual void readDouble( double& d ) { read(d); }
     virtual void readString( std::string& s ) { s = std::string(_bufferData, _bufferSize); }

@@ -193,6 +193,9 @@ public:
     virtual void readULong( unsigned long& l )
     { std::string str; readString(str); l = strtoul(str.c_str(), NULL, 0); }
 
+    virtual void readHalf( osg::half& f )
+    { std::string str; readString(str); f = osg::asciiToFloat(str.c_str()); }
+
     virtual void readFloat( float& f )
     { std::string str; readString(str); f = osg::asciiToFloat(str.c_str()); }
 

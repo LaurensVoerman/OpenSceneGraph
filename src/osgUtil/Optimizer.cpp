@@ -132,6 +132,10 @@ void Optimizer::optimize(osg::Node* node)
 
         if(str.find("~BUFFER_OBJECT_SETTINGS")!=std::string::npos) options ^= BUFFER_OBJECT_SETTINGS;
         else if(str.find("BUFFER_OBJECT_SETTINGS")!=std::string::npos) options |= BUFFER_OBJECT_SETTINGS;
+
+        if (str.find("~SHORT_ARRAYS") != std::string::npos) options ^= SHORT_ARRAYS;
+        else if (str.find("SHORT_ARRAYS") != std::string::npos) options |= SHORT_ARRAYS;
+
     }
     else
     {
@@ -367,6 +371,13 @@ void Optimizer::optimize(osg::Node* node, unsigned int options)
         OSG_INFO<<"Optimizer::optimize() doing BUFFER_OBJECT_SETTINGS"<<std::endl;
         BufferObjectVisitor bov(true, true, true, true, true, false);
         node->accept(bov);
+    }
+
+    if (options & SHORT_ARRAYS)
+    {
+        OSG_INFO << "Optimizer::optimize() doing SHORT_ARRAYS" << std::endl;
+        ShortArrayVisitor sav;
+        node->accept(sav);
     }
 
     if (osg::getNotifyLevel()>=osg::INFO)
@@ -2246,6 +2257,10 @@ class MergeArrayVisitor : public osg::ArrayVisitor
         virtual void apply(osg::Vec2sArray& rhs) { _merge(rhs); }
         virtual void apply(osg::Vec3sArray& rhs) { _merge(rhs); }
         virtual void apply(osg::Vec4sArray& rhs) { _merge(rhs); }
+
+        virtual void apply(osg::Vec2hArray& rhs) { _merge(rhs); }
+        virtual void apply(osg::Vec3hArray& rhs) { _merge(rhs); }
+        virtual void apply(osg::Vec4hArray& rhs) { _merge(rhs); }
 };
 
 bool Optimizer::MergeGeometryVisitor::mergeGeometry(osg::Geometry& lhs,osg::Geometry& rhs)
@@ -4544,5 +4559,67 @@ void Optimizer::BufferObjectVisitor::apply(osg::Geometry& geometry)
     {
         OSG_NOTICE<<"geometry.setUseDisplayList("<<_valueDisplayList<<")"<<std::endl;
         geometry.setUseDisplayList(_valueDisplayList);
+    }
+}
+osg::Array* convertToShortArray(osg::Array* in) {
+    if (NULL == in) return in;
+    if (in->getDataSize() <= 2) return in;
+    unsigned int numVertices = in->getNumElements();
+    osg::Array::Binding bnd = osg::getBinding(in);
+    switch (in->getDataSize()) {
+    case 2:
+        if (osg::Vec2Array * v2 = dynamic_cast<osg::Vec2Array*>(in)) {
+            osg::Vec2hArray *out = new osg::Vec2hArray(bnd, numVertices);
+            for (unsigned int  i = 0; i < numVertices; ++i) {
+                (*out)[i].x() = (*v2)[i].x();
+                (*out)[i].y() = (*v2)[i].y();
+            }
+            return out;
+        }
+        break;
+    case 3:
+        if (osg::Vec3Array * v3 = dynamic_cast<osg::Vec3Array*>(in)) {
+            osg::Vec3hArray* out = new osg::Vec3hArray(bnd, numVertices);
+            for (unsigned int i = 0; i < numVertices; ++i) {
+                (*out)[i].x() = (*v3)[i].x();
+                (*out)[i].y() = (*v3)[i].y();
+                (*out)[i].z() = (*v3)[i].z();
+            }
+            return out;
+        }
+        break;
+    case 4:
+        if (osg::Vec4Array * v4 = dynamic_cast<osg::Vec4Array*>(in)) {
+            osg::Vec4hArray* out = new osg::Vec4hArray(bnd, numVertices);
+            for (unsigned int i = 0; i < numVertices; ++i) {
+                (*out)[i].x() = (*v4)[i].x();
+                (*out)[i].y() = (*v4)[i].y();
+                (*out)[i].z() = (*v4)[i].z();
+                (*out)[i].w() = (*v4)[i].w();
+            }
+            return out;
+        }
+        break;
+    }
+    return in;
+}
+void Optimizer::ShortArrayVisitor::apply(osg::Geometry& geometry)
+{
+    //anything but vec3 vertices makes geometry inpossible to pick
+    geometry.setVertexArray(convertToShortArray(geometry.getVertexArray()));
+    geometry.setNormalArray(convertToShortArray(geometry.getNormalArray()));
+    geometry.setColorArray(convertToShortArray(geometry.getColorArray()));
+
+    geometry.setSecondaryColorArray(convertToShortArray(geometry.getSecondaryColorArray()));
+    geometry.setFogCoordArray(convertToShortArray(geometry.getFogCoordArray()));
+    
+        
+    for (unsigned int i = 0; i < geometry.getNumTexCoordArrays(); ++i)
+    {
+        geometry.setTexCoordArray(i, convertToShortArray(geometry.getTexCoordArray(i)));
+    }
+    for (unsigned int i = 0; i < geometry.getNumVertexAttribArrays(); ++i)
+    {
+        geometry.setVertexAttribArray(i, convertToShortArray(geometry.getVertexAttribArray(i)));
     }
 }

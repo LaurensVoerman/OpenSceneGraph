@@ -100,6 +100,7 @@ public:
     OutputStream& operator<<( unsigned int i ) { _out->writeUInt(i); return *this; }
     OutputStream& operator<<( long l ) { _out->writeLong(l); return *this; }
     OutputStream& operator<<( unsigned long l ) { _out->writeULong(l); return *this; }
+    OutputStream& operator<<( osg::half f ) { _out->writeFloat(f); return *this; }
     OutputStream& operator<<( float f ) { _out->writeFloat(f); return *this; }
     OutputStream& operator<<( double d ) { _out->writeDouble(d); return *this; }
     OutputStream& operator<<( long long ll ) { _out->writeInt64(ll); return *this; }
@@ -131,6 +132,9 @@ public:
     OutputStream& operator<<( const osg::Vec2ui& v );
     OutputStream& operator<<( const osg::Vec3ui& v );
     OutputStream& operator<<( const osg::Vec4ui& v );
+    OutputStream& operator<<( const osg::Vec2h& v );
+    OutputStream& operator<<( const osg::Vec3h& v );
+    OutputStream& operator<<( const osg::Vec4h& v );
     OutputStream& operator<<( const osg::Vec2f& v );
     OutputStream& operator<<( const osg::Vec3f& v );
     OutputStream& operator<<( const osg::Vec4f& v );
@@ -218,7 +222,7 @@ protected:
     osg::ref_ptr<OutputIterator> _out;
     osg::ref_ptr<OutputException> _exception;
     osg::ref_ptr<const osgDB::Options> _options;
-	
+    
     int _targetFileVersion;
 };
 

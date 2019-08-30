@@ -96,6 +96,7 @@ public:
     InputStream& operator>>( unsigned long& l ) { _in->readULong(l); checkStream(); return *this; }
     InputStream& operator>>( float& f ) { _in->readFloat(f); checkStream(); return *this; }
     InputStream& operator>>( double& d ) { _in->readDouble(d); checkStream(); return *this; }
+    InputStream& operator>>( osg::half& f ) { _in->readHalf(f); checkStream(); return *this; }
     InputStream& operator>>( std::string& s ) { _in->readString(s); checkStream(); return *this; }
     InputStream& operator>>( std::istream& (*fn)(std::istream&) ) { _in->readStream(fn); checkStream(); return *this; }
     InputStream& operator>>( std::ios_base& (*fn)(std::ios_base&) ) { _in->readBase(fn); checkStream(); return *this; }
@@ -128,6 +129,9 @@ public:
     InputStream& operator>>( osg::Vec2d& v );
     InputStream& operator>>( osg::Vec3d& v );
     InputStream& operator>>( osg::Vec4d& v );
+    InputStream& operator>>( osg::Vec2h& v );
+    InputStream& operator>>( osg::Vec3h& v );
+    InputStream& operator>>( osg::Vec4h& v );
     InputStream& operator>>( osg::Quat& q );
     InputStream& operator>>( osg::Plane& p );
     InputStream& operator>>( osg::Matrixf& mat );

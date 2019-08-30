@@ -68,6 +68,10 @@ static const char* s_ArrayNames[] =
 
     "UInt64Array",  //36
     "Int64Array",   //37
+
+    "Vec2hArray",   //38
+    "Vec3hArray",   //39
+    "Vec4hArray",   //40
 };
 
 const char* Array::className() const

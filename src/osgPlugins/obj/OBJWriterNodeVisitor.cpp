@@ -121,6 +121,10 @@ class ObjPrimitiveIndexWriter : public osg::PrimitiveIndexFunctor {
 
         virtual void setVertexArray(unsigned int,const osg::Vec4d* ) {}
 
+        virtual void setVertexArray(unsigned int, const osg::Vec2h*) {}
+        virtual void setVertexArray(unsigned int, const osg::Vec3h*) {}
+        virtual void setVertexArray(unsigned int, const osg::Vec4h*) {}
+
         void write(unsigned int i)
         {
             _fout << (i + _lastVertexIndex) << "/";

@@ -1,0 +1,61 @@
+/* -*-c++-*- OpenSceneGraph - Copyright (C) 2019 Laurens Voerman
+ *
+ * This library is open source and may be redistributed and/or modified under
+ * the terms of the OpenSceneGraph Public License (OSGPL) version 0.0 or
+ * (at your option) any later version.  The full license is in LICENSE file
+ * included with this distribution, and on the openscenegraph.org website.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * OpenSceneGraph Public License for more details.
+*/
+
+#ifndef OSG_HALF
+#define OSG_HALF 1
+#include<osg/Export>
+
+namespace osg {
+    typedef unsigned __int16 half_float;
+    OSG_EXPORT float halfToFloat(half_float);
+    OSG_EXPORT half_float floatToHalf(float);
+
+
+    class OSG_EXPORT half
+    {
+    public:
+        half() { _v = 0; }
+        half(float f) { _v = floatToHalf(f); }
+
+        inline half& operator = (const half& rhs) { _v = rhs._v; return *this; }
+        inline operator float() const { return halfToFloat(_v); }
+
+        inline bool operator == (const half& v) const { return _v == v._v; }
+        inline bool operator != (const half& v) const { return _v != v._v; }
+        inline bool operator <  (const half& v) const { return halfToFloat(_v) < halfToFloat(v._v); }
+        inline bool operator >  (const half& v) const { return halfToFloat(_v) > halfToFloat(v._v); }
+
+        inline half operator - () const { return half(static_cast<half_float>(_v ^ 0x8000) ); }
+        inline half operator * (half rhs) const { return half(halfToFloat(_v) * halfToFloat(rhs._v)); }
+        inline half& operator *= (half rhs) { _v = floatToHalf(halfToFloat(_v) * halfToFloat(rhs._v)); return *this; }
+        inline half operator / (half rhs) const { return half(halfToFloat(_v) / halfToFloat(rhs._v)); }
+        inline half& operator /= (half rhs) { _v = floatToHalf(halfToFloat(_v) / halfToFloat(rhs._v)); return *this; }
+        inline half operator + (half rhs) const { return half(halfToFloat(_v) + halfToFloat(rhs._v)); }
+        inline half& operator += (half rhs) { _v = floatToHalf(halfToFloat(_v) + halfToFloat(rhs._v)); return *this; }
+        inline half operator - (half rhs) const { return half(halfToFloat(_v) - halfToFloat(rhs._v)); }
+        inline half& operator -= (half rhs) { _v = floatToHalf(halfToFloat(_v) - halfToFloat(rhs._v)); return *this; }
+
+        inline float operator * (float rhs) const { return (halfToFloat(_v) * rhs); }
+        inline half& operator *= (float rhs) { _v = floatToHalf(halfToFloat(_v) * rhs); return *this; }
+        inline float operator / (float rhs) const { return (halfToFloat(_v) / rhs); }
+        inline half& operator /= (float rhs) { _v = floatToHalf(halfToFloat(_v) / rhs); return *this; }
+        inline float operator + (float rhs) const { return (halfToFloat(_v) + rhs); }
+        inline half& operator += (float rhs) { _v = floatToHalf(halfToFloat(_v) + rhs); return *this; }
+        inline float operator - (float rhs) const { return (halfToFloat(_v) - rhs); }
+        inline half& operator -= (float rhs) { _v = floatToHalf(halfToFloat(_v) - rhs); return *this; }
+    private:
+        half(half_float v) { _v = v; }
+        half_float _v;
+    };
+}
+#endif

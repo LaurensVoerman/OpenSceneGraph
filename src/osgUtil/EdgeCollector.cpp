@@ -426,6 +426,44 @@ class CopyVertexArrayToPointsVisitor : public osg::ArrayVisitor
                 osgUtil::ConvertVec<osg::Vec4d, osg::Vec3d>::convert(array[i], _pointList[i]->_vertex);
             }
         }
+        virtual void apply(osg::Vec2hArray& array)
+        {
+            if (_pointList.size() != array.size()) return;
+
+            for (unsigned int i = 0; i < _pointList.size(); ++i)
+            {
+                _pointList[i] = new EdgeCollector::Point;
+                _pointList[i]->_index = i;
+
+                osgUtil::ConvertVec<osg::Vec2h, osg::Vec3d>::convert(array[i], _pointList[i]->_vertex);
+            }
+        }
+
+        virtual void apply(osg::Vec3hArray& array)
+        {
+            if (_pointList.size() != array.size()) return;
+
+            for (unsigned int i = 0; i < _pointList.size(); ++i)
+            {
+                _pointList[i] = new EdgeCollector::Point;
+                _pointList[i]->_index = i;
+
+                osgUtil::ConvertVec<osg::Vec3h, osg::Vec3d>::convert(array[i], _pointList[i]->_vertex);
+            }
+        }
+
+        virtual void apply(osg::Vec4hArray& array)
+        {
+            if (_pointList.size() != array.size()) return;
+
+            for (unsigned int i = 0; i < _pointList.size(); ++i)
+            {
+                _pointList[i] = new EdgeCollector::Point;
+                _pointList[i]->_index = i;
+
+                osgUtil::ConvertVec<osg::Vec4h, osg::Vec3d>::convert(array[i], _pointList[i]->_vertex);
+            }
+        }
 
         EdgeCollector::PointList& _pointList;
 

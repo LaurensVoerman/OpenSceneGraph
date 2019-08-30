@@ -445,6 +445,9 @@ class OSG_EXPORT Drawable : public Node
             virtual void apply(AttributeType,unsigned int,Vec2d*) {}
             virtual void apply(AttributeType,unsigned int,Vec3d*) {}
             virtual void apply(AttributeType,unsigned int,Vec4d*) {}
+            virtual void apply(AttributeType,unsigned int,Vec2h*) {}
+            virtual void apply(AttributeType,unsigned int,Vec3h*) {}
+            virtual void apply(AttributeType,unsigned int,Vec4h*) {}
         };
 
 
@@ -481,6 +484,9 @@ class OSG_EXPORT Drawable : public Node
             virtual void apply(AttributeType,unsigned int,const Vec2d*) {}
             virtual void apply(AttributeType,unsigned int,const Vec3d*) {}
             virtual void apply(AttributeType,unsigned int,const Vec4d*) {}
+            virtual void apply(AttributeType,unsigned int,const Vec2h*) {}
+            virtual void apply(AttributeType,unsigned int,const Vec3h*) {}
+            virtual void apply(AttributeType,unsigned int,const Vec4h*) {}
         };
 
         /** Return true if the Drawable subclass supports accept(ConstAttributeFunctor&).*/
@@ -644,6 +650,9 @@ class AttributeFunctorArrayVisitor : public ArrayVisitor
         virtual void apply(Vec2dArray& array) {  if (!array.empty()) _af.apply(_type,array.size(),&(array.front())); }
         virtual void apply(Vec3dArray& array) {  if (!array.empty()) _af.apply(_type,array.size(),&(array.front())); }
         virtual void apply(Vec4dArray& array) {  if (!array.empty()) _af.apply(_type,array.size(),&(array.front())); }
+        virtual void apply(Vec2hArray& array) {  if (!array.empty()) _af.apply(_type,array.size(),&(array.front())); }
+        virtual void apply(Vec3hArray& array) {  if (!array.empty()) _af.apply(_type,array.size(),&(array.front())); }
+        virtual void apply(Vec4hArray& array) {  if (!array.empty()) _af.apply(_type,array.size(),&(array.front())); }
 
 
         inline void applyArray(Drawable::AttributeType type,Array* array)
@@ -687,6 +696,9 @@ class ConstAttributeFunctorArrayVisitor : public ConstArrayVisitor
         virtual void apply(const Vec2dArray& array) {  if (!array.empty()) _af.apply(_type,array.size(),&(array.front())); }
         virtual void apply(const Vec3dArray& array) {  if (!array.empty()) _af.apply(_type,array.size(),&(array.front())); }
         virtual void apply(const Vec4dArray& array) {  if (!array.empty()) _af.apply(_type,array.size(),&(array.front())); }
+        virtual void apply(const Vec2hArray& array) {  if (!array.empty()) _af.apply(_type,array.size(),&(array.front())); }
+        virtual void apply(const Vec3hArray& array) {  if (!array.empty()) _af.apply(_type,array.size(),&(array.front())); }
+        virtual void apply(const Vec4hArray& array) {  if (!array.empty()) _af.apply(_type,array.size(),&(array.front())); }
 
 
         inline void applyArray(Drawable::AttributeType type,const Array* array)

@@ -505,6 +505,9 @@ struct ComputeBound : public PrimitiveFunctor
             _vertices2d = 0;
             _vertices3d = 0;
             _vertices4d = 0;
+            _vertices2h = 0;
+            _vertices3h = 0;
+            _vertices4h = 0;
         }
 
         virtual void setVertexArray(unsigned int,const Vec2* vertices) { _vertices2f = vertices; }
@@ -514,6 +517,16 @@ struct ComputeBound : public PrimitiveFunctor
         virtual void setVertexArray(unsigned int,const Vec2d* vertices) { _vertices2d  = vertices; }
         virtual void setVertexArray(unsigned int,const Vec3d* vertices) { _vertices3d  = vertices; }
         virtual void setVertexArray(unsigned int,const Vec4d* vertices) { _vertices4d = vertices; }
+
+        virtual void setVertexArray(unsigned int, const Vec2h* vertices) { _vertices2h = vertices; }
+        virtual void setVertexArray(unsigned int, const Vec3h* vertices) { _vertices3h = vertices; }
+        virtual void setVertexArray(unsigned int, const Vec4h* vertices) { _vertices4h = vertices; }
+        virtual bool vertexArrayValid()
+        {
+            return (0!= _vertices3f) || (0!= _vertices2f) || (0!= _vertices4f) ||
+                   (0!= _vertices2d) || (0!= _vertices3d) || (0!= _vertices4d) ||
+                   (0!= _vertices2h) || (0!= _vertices3h) || (0!= _vertices4h);
+        }
 
         template<typename T>
         void _drawArrays(T* vert, T* end)
@@ -542,6 +555,9 @@ struct ComputeBound : public PrimitiveFunctor
             else if (_vertices2d) _drawArrays(_vertices2d+first, _vertices2d+(first+count));
             else if (_vertices3d) _drawArrays(_vertices3d+first, _vertices3d+(first+count));
             else if (_vertices4d) _drawArrays(_vertices4d+first, _vertices4d+(first+count));
+            else if (_vertices2h) _drawArrays(_vertices2h+first, _vertices2h+(first+count));
+            else if (_vertices3h) _drawArrays(_vertices3h+first, _vertices3h+(first+count));
+            else if (_vertices4h) _drawArrays(_vertices4h+first, _vertices4h+(first+count));
         }
 
         virtual void drawElements(GLenum,GLsizei count,const GLubyte* indices)
@@ -552,6 +568,9 @@ struct ComputeBound : public PrimitiveFunctor
             else if (_vertices2d) _drawElements(_vertices2d, indices, indices + count);
             else if (_vertices3d) _drawElements(_vertices3d, indices, indices + count);
             else if (_vertices4d) _drawElements(_vertices4d, indices, indices + count);
+            else if (_vertices2h) _drawElements(_vertices2h, indices, indices + count);
+            else if (_vertices3h) _drawElements(_vertices3h, indices, indices + count);
+            else if (_vertices4h) _drawElements(_vertices4h, indices, indices + count);
         }
 
         virtual void drawElements(GLenum,GLsizei count,const GLushort* indices)
@@ -562,6 +581,9 @@ struct ComputeBound : public PrimitiveFunctor
             else if (_vertices2d) _drawElements(_vertices2d, indices, indices + count);
             else if (_vertices3d) _drawElements(_vertices3d, indices, indices + count);
             else if (_vertices4d) _drawElements(_vertices4d, indices, indices + count);
+            else if (_vertices2h) _drawElements(_vertices2h, indices, indices + count);
+            else if (_vertices3h) _drawElements(_vertices3h, indices, indices + count);
+            else if (_vertices4h) _drawElements(_vertices4h, indices, indices + count);
         }
 
         virtual void drawElements(GLenum,GLsizei count,const GLuint* indices)
@@ -572,15 +594,21 @@ struct ComputeBound : public PrimitiveFunctor
             else if (_vertices2d) _drawElements(_vertices2d, indices, indices + count);
             else if (_vertices3d) _drawElements(_vertices3d, indices, indices + count);
             else if (_vertices4d) _drawElements(_vertices4d, indices, indices + count);
+            else if (_vertices2h) _drawElements(_vertices2h, indices, indices + count);
+            else if (_vertices3h) _drawElements(_vertices3h, indices, indices + count);
+            else if (_vertices4h) _drawElements(_vertices4h, indices, indices + count);
         }
 
         virtual void begin(GLenum) {}
         virtual void vertex(const Vec2& vert) { _bb.expandBy(osg::Vec3(vert[0],vert[1],0.0f)); }
         virtual void vertex(const Vec3& vert) { _bb.expandBy(vert); }
         virtual void vertex(const Vec4& vert) { if (vert[3]!=0.0f) _bb.expandBy(osg::Vec3(vert[0],vert[1],vert[2])/vert[3]); }
-        virtual void vertex(const Vec2d& vert) { _bb.expandBy(osg::Vec3(vert[0],vert[1],0.0f)); }
+        virtual void vertex(const Vec2d& vert) { _bb.expandBy(osg::Vec3(vert[0], vert[1], 0.0f)); }
         virtual void vertex(const Vec3d& vert) { _bb.expandBy(vert); }
-        virtual void vertex(const Vec4d& vert) { if (vert[3]!=0.0f) _bb.expandBy(osg::Vec3(vert[0],vert[1],vert[2])/vert[3]); }
+        virtual void vertex(const Vec4d& vert) { if (vert[3] != 0.0f) _bb.expandBy(osg::Vec3(vert[0], vert[1], vert[2]) / vert[3]); }
+        virtual void vertex(const Vec2h& vert) { _bb.expandBy(osg::Vec3(vert[0], vert[1], 0.0f)); }
+        virtual void vertex(const Vec3h& vert) { _bb.expandBy(osg::Vec3(vert[0], vert[1], vert[2])); }
+        virtual void vertex(const Vec4h& vert) { if (vert[3] != Vec4h::value_type(0.0f)) _bb.expandBy(osg::Vec3(vert[0], vert[1], vert[2]) / vert[3]); }
         virtual void vertex(float x,float y)  { _bb.expandBy(x,y,1.0f); }
         virtual void vertex(float x,float y,float z) { _bb.expandBy(x,y,z); }
         virtual void vertex(float x,float y,float z,float w) { if (w!=0.0f) _bb.expandBy(x/w,y/w,z/w); }
@@ -595,6 +623,9 @@ struct ComputeBound : public PrimitiveFunctor
         const Vec2d*    _vertices2d;
         const Vec3d*    _vertices3d;
         const Vec4d*    _vertices4d;
+        const Vec2h*    _vertices2h;
+        const Vec3h*    _vertices3h;
+        const Vec4h*    _vertices4h;
         BoundingBox     _bb;
 };
 
