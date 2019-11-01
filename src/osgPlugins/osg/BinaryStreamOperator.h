@@ -213,8 +213,8 @@ public:
 
     virtual void readHalf(osg::half& f)
     {
-        _in->read((char*)& f, osgDB::HALF_SIZE);
-        if (_byteSwap) osg::swapBytes((char*)& f, osgDB::HALF_SIZE);
+        _in->read((char*)& f, osgDB::HALF_FLOAT_SIZE);
+        if (_byteSwap) osg::swapBytes((char*)& f, osgDB::HALF_FLOAT_SIZE);
     }
 
     virtual void readFloat( float& f )

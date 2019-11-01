@@ -13,6 +13,7 @@
 
 #ifndef OSG_HALF
 #define OSG_HALF 1
+#include<osg/Export>
 
 namespace osg {
     typedef unsigned __int16 half_float;
