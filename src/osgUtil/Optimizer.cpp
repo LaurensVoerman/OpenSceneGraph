@@ -35,7 +35,7 @@
 #include <osg/Timer>
 #include <osg/TexMat>
 #include <osg/io_utils>
-
+#include <osg/os_utils>
 #include <osgUtil/TransformAttributeFunctor>
 #include <osgUtil/Tessellator>
 #include <osgUtil/Statistics>
@@ -218,6 +218,10 @@ void Optimizer::optimize(osg::Node* node, unsigned int options)
 
         // traverse the scene collecting textures into texture atlas.
         TextureAtlasVisitor tav(this);
+        GLint osg_max_size = 0;
+        if (osg::getEnvVar("OSG_MAX_TEXTURE_SIZE", osg_max_size)) {
+            tav.getTextureAtlasBuilder().setMaximumAtlasSize(osg_max_size, osg_max_size);//default 2048
+        }
         node->accept(tav);
         while (tav.optimize()) {
             tav.reset();
@@ -3061,7 +3065,7 @@ void Optimizer::FlattenBillboardVisitor::process()
 ////////////////////////////////////////////////////////////////////////////
 
 Optimizer::TextureAtlasBuilder::TextureAtlasBuilder():
-_maximumAtlasWidth(2048),
+    _maximumAtlasWidth(2048),
     _maximumAtlasHeight(2048),
     _margin(0)
 {
@@ -4094,23 +4098,24 @@ bool Optimizer::TextureAtlasVisitor::optimize()
 {
     _builder.reset();
 
-    if (_textures.size()<2)
+    if (_textures.size()<1)
     {
         // nothing to optimize
         return false;
     }
-
+    bool return_value = false;
+    if (_textures.size() > 1) {
     Textures texturesThatRepeat;
     Textures texturesThatRepeatAndAreOutOfRangeS;//set of textures needing S wrap
     Textures texturesThatRepeatAndAreOutOfRangeT;//set of textures needing T wrap
 
-    StateSetMap::iterator sitr;
-    for(sitr = _statesetMap.begin();
-        sitr != _statesetMap.end();
-        ++sitr)
+#if 0
+    for(StateSetMap::iterator ssmitr = _statesetMap.begin();
+        ssmitr != _statesetMap.end();
+        ++ssmitr)
     {
-        osg::StateSet* stateset = sitr->first;
-        Drawables& drawables = sitr->second;
+        osg::StateSet* stateset = ssmitr->first;
+        Drawables& drawables = ssmitr->second;
 
         const osg::StateSet::TextureAttributeList& tal = stateset->getTextureAttributeList();
         for(unsigned int unit=0; unit<tal.size(); ++unit)
@@ -4118,6 +4123,20 @@ bool Optimizer::TextureAtlasVisitor::optimize()
             osg::Texture2D* texture = dynamic_cast<osg::Texture2D*>(stateset->getTextureAttribute(unit,osg::StateAttribute::TEXTURE));
             if (texture)
             {
+#else
+    for (std::set<osg::Texture2D*>::iterator texitr = _textures.begin(); texitr != _textures.end(); ++texitr) {
+        osg::Texture2D *texture = *texitr;
+        Drawables drawables;
+        for (unsigned int parentIndex = 0; parentIndex < texture->getNumParents(); ++parentIndex) {
+            osg::StateSet* stateset = texture->getParent(parentIndex);
+            Drawables& AddDrawables = _statesetMap[stateset];
+            for (Drawables::iterator ditr = AddDrawables.begin(); ditr != AddDrawables.end(); ++ditr) {
+                drawables.insert(*ditr);
+            }
+        }
+        {
+            {
+#endif
                 bool s_repeat = texture->getWrap(osg::Texture2D::WRAP_S)==osg::Texture2D::REPEAT ||
                                 texture->getWrap(osg::Texture2D::WRAP_S)==osg::Texture2D::MIRROR;
 
@@ -4141,6 +4160,22 @@ bool Optimizer::TextureAtlasVisitor::optimize()
                         ditr != drawables.end();
                         ++ditr)
                     {
+                        osg::StateSet* stateset = (*ditr)->getStateSet();
+                        int unit = -1;
+                        if (!stateset) {
+                            osg::Node *parent = (*ditr)->getParent(0);
+                            stateset = parent->getStateSet();
+                            while (!stateset && (parent->getNumParents() > 0)) {
+                                parent = parent->getParent(0);
+                                stateset = parent->getStateSet();
+                            }
+                        }
+                        if (stateset) {
+                            const osg::StateSet::TextureAttributeList& tal = stateset->getTextureAttributeList();
+                            for (unit = tal.size() -1; unit >= 0 ; --unit)
+                            {
+                                osg::Texture2D* textureX = dynamic_cast<osg::Texture2D*>(stateset->getTextureAttribute(unit, osg::StateAttribute::TEXTURE));
+                                if (texture == textureX) {
                         osg::Geometry* geom = (*ditr)->asGeometry();
                         osg::Vec2Array* texcoords = geom ? dynamic_cast<osg::Vec2Array*>(geom->getTexCoordArray(unit)) : 0;
                         if (texcoords && !texcoords->empty())
@@ -4151,17 +4186,17 @@ bool Optimizer::TextureAtlasVisitor::optimize()
                                 for (osg::Vec2Array::iterator titr = texcoords->begin();
                                 titr != texcoords->end() /*&& !s_outOfRange && !t_outOfRange*/;
                                 ++titr)
-                            {
-                                osg::Vec2 tc = *titr;
-                                    float s = mat(0, 0) * tc[0] + mat(1, 0) * tc[1] + mat(3, 0);
-                                    float t = mat(0, 1) * tc[0] + mat(1, 1) * tc[1] + mat(3, 1);
-                                    if (s<s_min) { s_min = s; }
-                                    if (s>s_max) { s_max = s; }
+                                {
+                                    osg::Vec2 tc = *titr;
+                                        float s = mat(0, 0) * tc[0] + mat(1, 0) * tc[1] + mat(3, 0);
+                                        float t = mat(0, 1) * tc[0] + mat(1, 1) * tc[1] + mat(3, 1);
+                                        if (s<s_min) { s_min = s; }
+                                        if (s>s_max) { s_max = s; }
 
-                                    if (t<t_min) { t_min = t; }
-                                    if (t>t_max) { t_max = t; }
+                                        if (t<t_min) { t_min = t; }
+                                        if (t>t_max) { t_max = t; }
+                                }
                             }
-                        }
                             else {
                                 for (osg::Vec2Array::iterator titr = texcoords->begin();
                                     titr != texcoords->end() /*&& !s_outOfRange && !t_outOfRange*/;
@@ -4175,14 +4210,17 @@ bool Optimizer::TextureAtlasVisitor::optimize()
                                     if (tc[1]>t_max) { t_max = tc[1]; }
                                 }
                             }
-                            s_outOfRange = s_min < -0.001 || s_max > 1.001;
-                            t_outOfRange = t_min < -0.001 || t_max > 1.001;
+                            if (!s_outOfRange) s_outOfRange = s_min < -0.001 || s_max > 1.001;
+                            if (!t_outOfRange) t_outOfRange = t_min < -0.001 || t_max > 1.001;
                         }
                         else
                         {
                             // if no texcoords then texgen must be being used, therefore must assume that texture is truly repeating
                             s_outOfRange = true;
                             t_outOfRange = true;
+                        }
+                                }
+                            }
                         }
                     }
                     bool repeat_s = false; 
@@ -4197,8 +4235,8 @@ bool Optimizer::TextureAtlasVisitor::optimize()
                         //mind the overflow: 2^9 x 2^9 *3 *64k > 2^31 !
                         //                        int extraBytesLimit = 256 * 256;//64 K pixels
                         //                        int extraBytesLimit2 = 16 * 128;//2 K pixels - unwrap very small pics in both directions
-                        int extraPixelsLimit = 256 * 256;//64 K pixels
-                        int extraPixelsLimit2 = 16 * 128;//2 K pixels - unwrap very small pics in both directions
+                        int extraPixelsLimit = 256 * 256 * (_builder.getMaximumAtlasWidth() / 2048) * (_builder.getMaximumAtlasHeight() / 2048);//64 K pixels
+                        int extraPixelsLimit2 = 16 * 128 * (_builder.getMaximumAtlasWidth() / 2048) * (_builder.getMaximumAtlasHeight() / 2048);//2 K pixels - unwrap very small pics in both directions
                         int totalSizeInPixels = img->getTotalSizeInBytes() * 8 / img->getPixelSizeInBits();
                         int extraCopyLimit = extraPixelsLimit / totalSizeInPixels;//64 K pixels
                         int extraCopyLimit2 = extraPixelsLimit2 / totalSizeInPixels;//2 K pixels - unwrap very small pics in both directions
@@ -4244,13 +4282,13 @@ bool Optimizer::TextureAtlasVisitor::optimize()
                                     newImg->copySubImage(img->s() * i, 0, 0, img);
                                 }
                                 texture->setImage(newImg);
-                                osg::TexMat *tm = dynamic_cast<osg::TexMat*>(stateset->getTextureAttribute(unit, osg::StateAttribute::TEXMAT));
-                                osg::Matrix matrix = osg::Matrix::scale(1.0f / (float)s_width_i, 1.0f, 1.0f)*
-                                    osg::Matrix::translate((float)(-s_mini) / (float)s_width_i, 0.0f, 0.0f);
-                                if (tm) {
-                                    if (tm) matrix = tm->getMatrix() * matrix;
-                                }
-                                stateset->setTextureAttribute(unit, new osg::TexMat(matrix));
+//                                osg::TexMat *tm = dynamic_cast<osg::TexMat*>(stateset->getTextureAttribute(unit, osg::StateAttribute::TEXMAT));
+//                                osg::Matrix matrix = osg::Matrix::scale(1.0f / (float)s_width_i, 1.0f, 1.0f)*
+//                                    osg::Matrix::translate((float)(-s_mini) / (float)s_width_i, 0.0f, 0.0f);
+//                                if (tm) {
+//                                    if (tm) matrix = tm->getMatrix() * matrix;
+//                                }
+//                                stateset->setTextureAttribute(unit, new osg::TexMat(matrix));
                                 s_outOfRange = false;
                                 texture->setWrap(osg::Texture2D::WRAP_S, osg::Texture2D::CLAMP_TO_EDGE);
                             }
@@ -4283,13 +4321,13 @@ bool Optimizer::TextureAtlasVisitor::optimize()
                                     newImg->copySubImage(0, img->t() * i, 0, img);
                                 }
                                 texture->setImage(newImg);
-                                osg::TexMat *tm = dynamic_cast<osg::TexMat*>(stateset->getTextureAttribute(unit, osg::StateAttribute::TEXMAT));
-                                osg::Matrix matrix = osg::Matrix::scale(1.0f, 1.0f / (float)t_width_i, 1.0f)*
-                                    osg::Matrix::translate(0.0f, (float)(-t_mini) / (float)t_width_i, 0.0f);
-                                if (tm) {
-                                    if (tm) matrix = tm->getMatrix() * matrix;
-                                }
-                                stateset->setTextureAttribute(unit, new osg::TexMat(matrix));
+//                                osg::TexMat *tm = dynamic_cast<osg::TexMat*>(stateset->getTextureAttribute(unit, osg::StateAttribute::TEXMAT));
+//                                osg::Matrix matrix = osg::Matrix::scale(1.0f, 1.0f / (float)t_width_i, 1.0f)*
+//                                    osg::Matrix::translate(0.0f, (float)(-t_mini) / (float)t_width_i, 0.0f);
+//                                if (tm) {
+//                                    if (tm) matrix = tm->getMatrix() * matrix;
+//                                }
+//                                stateset->setTextureAttribute(unit, new osg::TexMat(matrix));
                                 t_outOfRange = false;
                                 texture->setWrap(osg::Texture2D::WRAP_T, osg::Texture2D::CLAMP_TO_EDGE);
                             }
@@ -4308,6 +4346,57 @@ bool Optimizer::TextureAtlasVisitor::optimize()
                                 }
                             }
                         }
+//find stateset / texunit for texture
+                        for (unsigned int parentIndex = 0; parentIndex < texture->getNumParents(); ++parentIndex) {
+                            osg::StateSet* stateset = texture->getParent(parentIndex);
+                            int unit = -1;
+                            if (stateset) {
+                                const osg::StateSet::TextureAttributeList& tal = stateset->getTextureAttributeList();
+                                for (unit = tal.size() - 1; unit >= 0; --unit)
+                                {
+                                    osg::Texture2D* textureX = dynamic_cast<osg::Texture2D*>(stateset->getTextureAttribute(unit, osg::StateAttribute::TEXTURE));
+                                    if (texture == textureX) {
+                                        //modify each stateset
+                                        if (repeat_s)
+                                        {
+                                            bool tooBig = (s_width_i - 1.0f) > extraCopyLimit;
+                                            if (!tooBig) {
+                                                osg::TexMat *tm = dynamic_cast<osg::TexMat*>(stateset->getTextureAttribute(unit, osg::StateAttribute::TEXMAT));
+                                                osg::Matrix matrix = osg::Matrix::scale(1.0f / (float)s_width_i, 1.0f, 1.0f)*
+                                                    osg::Matrix::translate((float)(-s_mini) / (float)s_width_i, 0.0f, 0.0f);
+                                                if (tm) {
+                                                    if (tm) matrix = tm->getMatrix() * matrix;
+                                                }
+                                                stateset->setTextureAttribute(unit, new osg::TexMat(matrix));
+                                            }
+                                        }
+                                        if (repeat_t)
+                                        {
+                                            bool tooBig = (t_width_i - 1.0f) > extraCopyLimit;
+                                            if (!tooBig) {
+                                                osg::TexMat *tm = dynamic_cast<osg::TexMat*>(stateset->getTextureAttribute(unit, osg::StateAttribute::TEXMAT));
+                                                osg::Matrix matrix = osg::Matrix::scale(1.0f, 1.0f / (float)t_width_i, 1.0f)*
+                                                    osg::Matrix::translate(0.0f, (float)(-t_mini) / (float)t_width_i, 0.0f);
+                                                if (tm) {
+                                                    if (tm) matrix = tm->getMatrix() * matrix;
+                                                }
+                                                stateset->setTextureAttribute(unit, new osg::TexMat(matrix));
+                                            }
+                                        }
+                                        if ((!s_outOfRange && t_outOfRange) || (!s_outOfRange && !t_outOfRange && (img->t() > img->s()))) {
+                                            //if t out of range: rotate the image 
+                                            osg::TexMat *tm = dynamic_cast<osg::TexMat*>(stateset->getTextureAttribute(unit, osg::StateAttribute::TEXMAT));
+                                            //                        osg::Matrix matrix(0.0, 1.0, 0.0, 0.0, -1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0);//CCW
+                                            osg::Matrix matrix(0.0, -1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0);//rotate Clockwise
+                                            if (tm) matrix = tm->getMatrix() * matrix;
+                                            stateset->setTextureAttribute(unit, new osg::TexMat(matrix));
+                                        }
+                                        //modify each stateset END
+                                    }
+                                }
+                            }
+                        }
+//find stateset / texunit for texture END
                         if ((!s_outOfRange && t_outOfRange) || (!s_outOfRange && !t_outOfRange && (img->t() > img->s()) )) {
                             //if t out of range: rotate the image 
                             // or if both in range and height largen than width
@@ -4320,11 +4409,11 @@ bool Optimizer::TextureAtlasVisitor::optimize()
                             if (t_outOfRange) {
                                 texture->setWrap(osg::Texture2D::WRAP_S, texture->getWrap(osg::Texture2D::WRAP_T));
                             }
-                            osg::TexMat *tm = dynamic_cast<osg::TexMat*>(stateset->getTextureAttribute(unit, osg::StateAttribute::TEXMAT));
-    //                        osg::Matrix matrix(0.0, 1.0, 0.0, 0.0, -1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0);//CCW
-                            osg::Matrix matrix(0.0, -1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0);//rotate Clockwise
-                            if (tm) matrix = tm->getMatrix() * matrix;
-                            stateset->setTextureAttribute(unit, new osg::TexMat(matrix));
+//                            osg::TexMat *tm = dynamic_cast<osg::TexMat*>(stateset->getTextureAttribute(unit, osg::StateAttribute::TEXMAT));
+//    //                        osg::Matrix matrix(0.0, 1.0, 0.0, 0.0, -1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0);//CCW
+//                            osg::Matrix matrix(0.0, -1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0);//rotate Clockwise
+//                            if (tm) matrix = tm->getMatrix() * matrix;
+//                            stateset->setTextureAttribute(unit, new osg::TexMat(matrix));
                             bool temp = s_outOfRange;
                             s_outOfRange = t_outOfRange;
                             t_outOfRange = temp;
@@ -4416,13 +4505,13 @@ bool Optimizer::TextureAtlasVisitor::optimize()
         }
     }
 
-    bool return_value = _builder.buildAtlas(_baseName);//still could flatten some texure matrices
-
+    return_value = _builder.buildAtlas(_baseName);//still could flatten some texure matrices
+    }
 
     typedef std::set<osg::StateSet*> StateSetSet;
     typedef std::map<osg::Drawable*, StateSetSet> DrawableStateSetMap;
     DrawableStateSetMap dssm;
-    for(sitr = _statesetMap.begin();
+    for(StateSetMap::iterator sitr = _statesetMap.begin();
         sitr != _statesetMap.end();
         ++sitr)
     {
@@ -4477,7 +4566,7 @@ bool Optimizer::TextureAtlasVisitor::optimize()
     }
 
     // remap the textures in the StateSet's
-    for(sitr = _statesetMap.begin();
+    for(StateSetMap::iterator sitr = _statesetMap.begin();
         sitr != _statesetMap.end();
         ++sitr)
     {
