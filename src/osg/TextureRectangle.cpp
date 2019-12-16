@@ -182,10 +182,7 @@ void TextureRectangle::apply(State& state) const
             // compute the dimensions of the texture.
             computeRequiredTextureDimensions(state, *_image, new_width, new_height, new_numMipmapLevels);
 
-            GLExtensions * extensions = state.get<GLExtensions>();
-            GLenum texStorageSizedInternalFormat = extensions->isTextureStorageEnabled && (_borderWidth == 0) ? selectSizedInternalFormat(_image.get()) : _internalFormat;
-
-            if (!textureObject->match(GL_TEXTURE_RECTANGLE, new_numMipmapLevels, texStorageSizedInternalFormat, new_width, new_height, 1, _borderWidth))
+            if (!textureObject->match(GL_TEXTURE_RECTANGLE, new_numMipmapLevels, _internalFormat, new_width, new_height, 1, _borderWidth))
             {
                 _textureObjectBuffer[contextID]->release();
                 _textureObjectBuffer[contextID] = 0;
