@@ -127,6 +127,14 @@ void Texture2D::setImage(Image* image)
 
     if (_image.valid())
     {
+        osg::Image * YUV420_U = dynamic_cast<osg::Image *>(_image->getUserData());
+        if (YUV420_U) {
+            if (YUV420_U->getNumClients() < _image->getNumClients()) _image = YUV420_U;
+            osg::Image * YUV420_V = dynamic_cast<osg::Image *>(YUV420_U->getUserData());
+            if (YUV420_V) {
+                if (YUV420_V->getNumClients() < _image->getNumClients()) _image = YUV420_V;
+            }
+        }
         _image->addClient(this);
 
         if (_image->requiresUpdateCall())
@@ -147,13 +155,14 @@ bool Texture2D::textureObjectValid(State& state) const
 
     // compute the internal texture format, this set the _internalFormat to an appropriate value.
     computeInternalFormat();
-
+    GLExtensions * extensions = state.get<GLExtensions>();
+    GLenum texStorageSizedInternalFormat = extensions->isTextureStorageEnabled && (_borderWidth == 0) ? selectSizedInternalFormat() : _internalFormat;
     GLsizei new_width, new_height, new_numMipmapLevels;
 
     // compute the dimensions of the texture.
     computeRequiredTextureDimensions(state, *_image, new_width, new_height, new_numMipmapLevels);
 
-    return textureObject->match(GL_TEXTURE_2D, new_numMipmapLevels, _internalFormat, new_width, new_height, 1, _borderWidth);
+    return textureObject->match(GL_TEXTURE_2D, new_numMipmapLevels, texStorageSizedInternalFormat, new_width, new_height, 1, _borderWidth);
 }
 
 

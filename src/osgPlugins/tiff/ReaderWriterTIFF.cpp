@@ -820,8 +820,6 @@ class ReaderWriterTIFF : public osgDB::ReaderWriter
             int t = height_ret;
             int r = depth_ret;
 
-            int internalFormat = numComponents_ret;
-
             unsigned int pixelFormat =
                 numComponents_ret == 1 ? GL_LUMINANCE :
                 numComponents_ret == 2 ? GL_LUMINANCE_ALPHA :
@@ -834,13 +832,40 @@ class ReaderWriterTIFF : public osgDB::ReaderWriter
                 bitspersample_ret == 16 ? GL_UNSIGNED_SHORT :
                 bitspersample_ret == 32 ? GL_FLOAT : (GLenum)-1;
 
-            if (dataType == GL_FLOAT) {
-                internalFormat =
-                    numComponents_ret == 1 ? GL_R32F :
-                    numComponents_ret == 2 ? GL_RG32F :
-                    numComponents_ret == 3 ? GL_RGB32F_ARB :
-                    numComponents_ret == 4 ? GL_RGBA32F_ARB : (GLenum)-1;
-//              if (numComponents_ret == 2) pixelFormat = GL_LUMINANCE_ALPHA;
+            int internalFormat = 0;
+            switch (pixelFormat) {
+                case GL_LUMINANCE: {
+                    switch (dataType) {
+                        case GL_UNSIGNED_BYTE: internalFormat = GL_LUMINANCE8; break;
+                        case GL_UNSIGNED_SHORT: internalFormat = GL_LUMINANCE16; break;
+                        case GL_FLOAT : internalFormat = GL_LUMINANCE32F_ARB; break;
+                    }
+                    break;
+                }
+                case GL_LUMINANCE_ALPHA: {
+                    switch (dataType) {
+                        case GL_UNSIGNED_BYTE: internalFormat = GL_LUMINANCE_ALPHA8UI_EXT; break;
+                        case GL_UNSIGNED_SHORT: internalFormat = GL_LUMINANCE_ALPHA16UI_EXT; break;
+                        case GL_FLOAT: internalFormat = GL_LUMINANCE_ALPHA32F_ARB; break;
+                    }
+                    break;
+                }
+                case GL_RGB: {
+                    switch (dataType) {
+                        case GL_UNSIGNED_BYTE: internalFormat = GL_RGB8; break;
+                        case GL_UNSIGNED_SHORT: internalFormat = GL_RGB16; break;
+                        case GL_FLOAT: internalFormat = GL_RGB32F_ARB; break;
+                    }
+                    break;
+                }
+                case GL_RGBA : {
+                    switch (dataType) {
+                        case GL_UNSIGNED_BYTE: internalFormat = GL_RGBA8; break;
+                        case GL_UNSIGNED_SHORT: internalFormat = GL_RGBA16; break;
+                        case GL_FLOAT: internalFormat = GL_RGBA32F_ARB; break;
+                    }
+                    break;
+                }
             }
 
             osg::Image* pOsgImage = new osg::Image;
