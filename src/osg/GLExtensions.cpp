@@ -732,9 +732,9 @@ GLExtensions::GLExtensions(unsigned int in_contextID):
     setGLExtensionFuncPtr(glTexBuffer, "glTexBuffer","glTexBufferARB" , validContext);
 
     isVBOSupported = validContext && (OSG_GLES2_FEATURES || OSG_GLES3_FEATURES || OSG_GL3_FEATURES || osg::isGLExtensionSupported(contextID,"GL_ARB_vertex_buffer_object"));
-    isPBOSupported = validContext && (OSG_GLES3_FEATURES || OSG_GL3_FEATURES || osg::isGLExtensionSupported(contextID,"GL_ARB_pixel_buffer_object"));
+    isPBOSupported = validContext && ((OSG_GLES3_FEATURES && glVersion >= 3.0) || OSG_GL3_FEATURES || osg::isGLExtensionSupported(contextID,"GL_ARB_pixel_buffer_object"));
     isTBOSupported = validContext && osg::isGLExtensionSupported(contextID,"GL_ARB_texture_buffer_object");
-    isVAOSupported = validContext && (OSG_GLES3_FEATURES || OSG_GL3_FEATURES  || osg::isGLExtensionSupported(contextID, "GL_ARB_vertex_array_object", "GL_OES_vertex_array_object"));
+    isVAOSupported = validContext && ((OSG_GLES3_FEATURES && glVersion >= 3.0) || OSG_GL3_FEATURES || osg::isGLExtensionSupported(contextID, "GL_ARB_vertex_array_object", "GL_OES_vertex_array_object"));
     isTransformFeedbackSupported = validContext && osg::isGLExtensionSupported(contextID, "GL_ARB_transform_feedback2");
     isBufferObjectSupported = isVBOSupported || isPBOSupported;
 
@@ -1088,6 +1088,9 @@ GLExtensions::GLExtensions(unsigned int in_contextID):
 
 
     // FrameBufferObject
+    isMultisampledRenderToTextureSupported = validContext && isGLExtensionSupported(contextID, "GL_EXT_multisampled_render_to_texture");
+    isInvalidateFramebufferSupported = validContext && (isGLExtensionSupported(contextID, "GL_ARB_invalidate_subdata") || (OSG_GLES3_FEATURES && glVersion >= 3.0) || glVersion >= 4.3);
+
     setGLExtensionFuncPtr(glBindRenderbuffer, "glBindRenderbuffer", "glBindRenderbufferEXT", "glBindRenderbufferOES", validContext);
     setGLExtensionFuncPtr(glDeleteRenderbuffers, "glDeleteRenderbuffers", "glDeleteRenderbuffersEXT", "glDeleteRenderbuffersOES", validContext);
     setGLExtensionFuncPtr(glGenRenderbuffers, "glGenRenderbuffers", "glGenRenderbuffersEXT", "glGenRenderbuffersOES", validContext);
@@ -1101,6 +1104,7 @@ GLExtensions::GLExtensions(unsigned int in_contextID):
 
     setGLExtensionFuncPtr(glFramebufferTexture1D, "glFramebufferTexture1D", "glFramebufferTexture1DEXT", "glFramebufferTexture1DOES", validContext);
     setGLExtensionFuncPtr(glFramebufferTexture2D, "glFramebufferTexture2D", "glFramebufferTexture2DEXT", "glFramebufferTexture2DOES", validContext);
+    setGLExtensionFuncPtr(glFramebufferTexture2DMultisample, "glFramebufferTexture2DMultisample", "glFramebufferTexture2DMultisampleEXT", validContext);
     setGLExtensionFuncPtr(glFramebufferTexture3D, "glFramebufferTexture3D", "glFramebufferTexture3DEXT", "glFramebufferTexture3DOES", validContext);
     setGLExtensionFuncPtr(glFramebufferTexture, "glFramebufferTexture", "glFramebufferTextureEXT", "glFramebufferTextureOES", validContext);
     setGLExtensionFuncPtr(glFramebufferTextureLayer, "glFramebufferTextureLayer", "glFramebufferTextureLayerEXT", "glFramebufferTextureLayerOES", validContext);
@@ -1116,6 +1120,7 @@ GLExtensions::GLExtensions(unsigned int in_contextID):
 
     setGLExtensionFuncPtr(glGenerateMipmap, "glGenerateMipmap", "glGenerateMipmapEXT", "glGenerateMipmapOES", validContext);
     setGLExtensionFuncPtr(glBlitFramebuffer, "glBlitFramebuffer", "glBlitFramebufferEXT", "glBlitFramebufferOES", validContext);
+    setGLExtensionFuncPtr(glInvalidateFramebuffer, "glInvalidateFramebuffer", "glInvalidateFramebufferEXT", validContext);
     setGLExtensionFuncPtr(glGetRenderbufferParameteriv, "glGetRenderbufferParameteriv", "glGetRenderbufferParameterivEXT", "glGetRenderbufferParameterivOES", validContext);
 
 
