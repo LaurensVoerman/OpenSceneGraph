@@ -336,6 +336,10 @@ INCLUDE_DIRECTORIES(SYSTEM ${OPENGL_INCLUDE_DIR})
 # Platform specific definitions
 
 OPTION(OSG_COMPILE_CONCATENATE "Set to ON speed up the build by concatenating some sources before compiling." ON)
+#if necessary for FILE SIZE (CMAKE < 3.14)
+IF(CMAKE_VERSION VERSION_LESS "3.14.0")
+    include (FileInformation)
+ENDIF()
 
 IF(WIN32 AND NOT ANDROID)
     OPTION(OSG_DETERMINE_WIN_VERSION "Wheter to automatically determine current Windows version" ON)
