@@ -910,10 +910,9 @@ dxfText::drawScene(scene* sc)
     sc->ocs(m);
 
     ref_ptr<osgText::Text> _text = new osgText::Text;
-    _text->setText(_string);
-
+    _text->setText(_string, encoding);
     _text->setCharacterSize( _height, 1.0/_xscale );
-    _text->setFont("arial.ttf");
+    _text->setFont(font);
 
     Quat qr( DegreesToRadians(_rotation), Z_AXIS );
 

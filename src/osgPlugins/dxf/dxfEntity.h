@@ -293,6 +293,8 @@ class dxfText : public dxfBasicEntity
 {
 public:
     dxfText() :
+        encoding(osgText::String::ENCODING_ASCII),
+        font("arial.ttf"),
         _string(""),
         _point1(0,0,0),
         _point2(0,0,0),
@@ -305,10 +307,21 @@ public:
         _vjustify(0) {}
 
     virtual ~dxfText() {}
-    virtual dxfBasicEntity*        create() { return new dxfText; }
+    virtual dxfBasicEntity* create()
+    {
+        dxfText* text = new dxfText;
+        text->encoding = encoding;
+        text->font = font;
+        return text;
+    }
+
     virtual const char*            name() { return "TEXT"; }
     virtual void                   assign(dxfFile* dxf, codeValue& cv);
     virtual void                   drawScene(scene* sc);
+
+    // application settings
+    osgText::String::Encoding encoding;
+    std::string font;
 
 protected:
     std::string       _string;    // 1
