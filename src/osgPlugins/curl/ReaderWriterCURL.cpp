@@ -591,8 +591,26 @@ osgDB::ReaderWriter::ReadResult ReaderWriterCURL::readFile(ObjectType objectType
     }
 
     std::stringstream buffer;
+    std::string cacheFileName;
+    // Try to find a reader by file extension. If this fails, we will fetch the file
+    // anyway and try to get a reader via mime-type.
+    osgDB::ReaderWriter *reader =
+        osgDB::Registry::instance()->getReaderWriterForExtension( ext );
+    if (reader && objectType != NODE) {//cannot cache reader via mime-type. // nodes might be cached by the database pager, if loaded from a pagedLOD
+        osg::ref_ptr<osgDB::FileCache> fileCache = osgDB::Registry::instance()->getFileCache();
+        bool cacheImages = options ? (options->getObjectCacheHint() & osgDB::Options::CACHE_IMAGES) != 0 : false;
+        if (cacheImages && (fileCache.valid() && fileCache->isFileAppropriateForFileCache(fullFileName))) {
+            cacheFileName = fileCache->createCacheFileName(fullFileName);
+            std::string path = osgDB::getFilePath(cacheFileName);
 
-    EasyCurl::StreamObject sp(&buffer, NULL, std::string());
+            if (!osgDB::fileExists(path) && !osgDB::makeDirectory(path))
+            {
+                OSG_NOTICE << "Could not create cache directory: " << path << std::endl;
+                cacheFileName.clear();
+            }
+        }
+    }
+    EasyCurl::StreamObject sp(&buffer, NULL, cacheFileName);
     EasyCurl& easyCurl = getEasyCurl();
 
     // setup the timeouts:
@@ -605,11 +623,6 @@ osgDB::ReaderWriter::ReadResult ReaderWriterCURL::readFile(ObjectType objectType
     if (curlResult.status()==ReadResult::FILE_LOADED)
     {
         OSG_INFO<<"CURL: ReadResult::FILE_LOADED "<<std::endl;
-
-        // Try to find a reader by file extension. If this fails, we will fetch the file
-        // anyway and try to get a reader via mime-type.
-        osgDB::ReaderWriter *reader =
-            osgDB::Registry::instance()->getReaderWriterForExtension( ext );
 
         // If we do not already have a ReaderWriter, try to find one based on the
         // mime-type:
