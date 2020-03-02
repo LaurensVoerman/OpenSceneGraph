@@ -3,6 +3,7 @@
 #include <osg/Geometry>
 #include <osg/Matrix>
 #include <osg/MatrixTransform>
+#include <osg/LOD>
 
 #include <osgDB/FileNameUtils>
 #include <osgDB/FileUtils>
@@ -108,18 +109,27 @@ class ReaderWriterLAS : public osgDB::ReaderWriter
 
 
             // POINTS ////
-
+            if (h.GetPointRecordsCount() < 1) return NULL;//empty file
             unsigned int targetNumVertices = 10000;
 
-            osg::Geode* geode = new osg::Geode;
+            std::vector<osg::Geode*> lodGeode;
+            std::vector<osg::Geometry*> lodGeometry;
+            std::vector<osg::Vec3Array*> lodVertices;
+            std::vector<osg::Vec4ubArray*> lodColours;
 
-            osg::Geometry* geometry = new osg::Geometry;
-
-            osg::Vec3Array* vertices = new osg::Vec3Array;
-            osg::Vec4ubArray* colours = new osg::Vec4ubArray;
-
-            vertices->reserve(targetNumVertices);
-            colours->reserve(targetNumVertices);
+            unsigned int lodCount = 8;
+            for (lodCount = 1; lodCount < 9; ++lodCount) {
+                unsigned int bit = 1 << lodCount;
+                if (h.GetPointRecordsCount() < 1024 * bit) break;
+            }
+            for (unsigned int i = 0; i < lodCount; ++i) {
+                lodGeode.push_back(new osg::Geode);
+                lodGeometry.push_back(new osg::Geometry);
+                lodVertices.push_back(new osg::Vec3Array());
+                lodColours.push_back(new osg::Vec4ubArray);
+                lodVertices[i]->reserve(targetNumVertices);
+                lodColours[i]->reserve(targetNumVertices);
+            }
 
             liblas::detail::Timer t;
             t.start();
@@ -128,11 +138,25 @@ class ReaderWriterLAS : public osgDB::ReaderWriter
             minmax_t my (DBL_MAX, -DBL_MAX);
             minmax_t mz (DBL_MAX, -DBL_MAX);
 
-            uint32_t i = 0;
+            uint32_t i = 0;//pointIndex
             bool singleColor = true;
+            bool findCenter = _recenter || lodCount > 1;
             liblas::Color singleColorValue;
             while (reader.ReadNextPoint())
             {
+                unsigned int lodLevel = 0;
+                //if ((pointIndex & 1) == 1) lodLevel = 0;     //tail    1odd points (2n+1)
+                //else if ((pointIndex & 2) == 2) lodLevel = 1;//tail   10(4n+2)
+                //else if ((pointIndex & 4) == 4) lodLevel = 2;//tail  100(8n+4)
+                for (lodLevel = 0; lodLevel < lodCount-1; ++lodLevel) {
+                    unsigned int bit = 1 << lodLevel;
+                    if ((i & bit) == bit) break;
+                }
+                osg::Geode* geode = lodGeode[lodLevel];
+                osg::Geometry* geometry = lodGeometry[lodLevel];
+                osg::Vec3Array* vertices = lodVertices[lodLevel];
+                osg::Vec4ubArray* colours = lodColours[lodLevel];
+
                 liblas::Point const& p = reader.GetPoint();
 
                 // Extract color components from LAS point
@@ -175,13 +199,12 @@ class ReaderWriterLAS : public osgDB::ReaderWriter
                     geode->addDrawable(geometry);
 
                     // allocate a new geometry
-                    geometry = new osg::Geometry;
+                    lodGeometry[lodLevel] = new osg::Geometry;
+                    lodVertices[lodLevel] = new osg::Vec3Array;
+                    lodColours[lodLevel] = new osg::Vec4ubArray;
 
-                    vertices = new osg::Vec3Array;
-                    colours = new osg::Vec4ubArray;
-
-                    vertices->reserve(targetNumVertices);
-                    colours->reserve(targetNumVertices);
+                    lodVertices[lodLevel]->reserve(targetNumVertices);
+                    lodColours[lodLevel]->reserve(targetNumVertices);
                 }
                 double X = p.GetRawX();
                 double Y = p.GetRawY();
@@ -192,7 +215,7 @@ class ReaderWriterLAS : public osgDB::ReaderWriter
                     Y *= h.GetScaleY();
                     Z *= h.GetScaleZ();
                 }
-                if (_recenter)
+                if (findCenter)
                 {
                     mx.first = std::min<double>(mx.first, X);
                     mx.second = std::max<double>(mx.second, X);
@@ -215,36 +238,42 @@ class ReaderWriterLAS : public osgDB::ReaderWriter
             double mid_z = 0.5*(mz.second + mz.first);
             osg::Vec3 midVec(mid_x, mid_y, mid_z);
 
-            geometry->setUseDisplayList(true);
-            geometry->setUseVertexBufferObjects(true);
-            geometry->setVertexArray(vertices);
-            if (singleColor)
-            {
-                colours->resize(1);
-                geometry->setColorArray(colours, osg::Array::BIND_OVERALL);
-            }
-            else
-            {
-                geometry->setColorArray(colours, osg::Array::BIND_PER_VERTEX);
-
-            }
-            geometry->addPrimitiveSet(new osg::DrawArrays(GL_POINTS, 0, vertices->size()));
-
-            geode->addDrawable(geometry);
-
-            if (_recenter)
-            {
-                //Transform vertices to midpoint
-                for (unsigned int geomIndex = 0; geomIndex < geode->getNumDrawables(); ++geomIndex)
+            for (unsigned int lodLevel = 0; lodLevel < lodCount; ++lodLevel) {
+                osg::Geode* geode = lodGeode[lodLevel];
+                osg::Geometry* geometry = lodGeometry[lodLevel];
+                osg::Vec3Array* vertices = lodVertices[lodLevel];
+                osg::Vec4ubArray* colours = lodColours[lodLevel];
+                geometry->setUseDisplayList(true);
+                geometry->setUseVertexBufferObjects(true);
+                geometry->setVertexArray(vertices);
+                if (singleColor)
                 {
-                    osg::Geometry *geom = dynamic_cast<osg::Geometry*>(geode->getDrawable(geomIndex));
-                    if (geom)
+                    colours->resize(1);
+                    geometry->setColorArray(colours, osg::Array::BIND_OVERALL);
+                }
+                else
+                {
+                    geometry->setColorArray(colours, osg::Array::BIND_PER_VERTEX);
+
+                }
+                geometry->addPrimitiveSet(new osg::DrawArrays(GL_POINTS, 0, vertices->size()));
+
+                geode->addDrawable(geometry);
+
+                if (_recenter)
+                {
+                    //Transform vertices to midpoint
+                    for (unsigned int geomIndex = 0; geomIndex < geode->getNumDrawables(); ++geomIndex)
                     {
-                        osg::Vec3Array* vertArray = dynamic_cast<osg::Vec3Array*>(geom->getVertexArray());
-                        size_t vertArraySize = vertArray->size();
-                        for (size_t vertexIndex = 0; vertexIndex < vertArraySize; ++vertexIndex)
+                        osg::Geometry *geom = dynamic_cast<osg::Geometry*>(geode->getDrawable(geomIndex));
+                        if (geom)
                         {
-                            (*vertArray)[vertexIndex] -= midVec;
+                            osg::Vec3Array* vertArray = dynamic_cast<osg::Vec3Array*>(geom->getVertexArray());
+                            size_t vertArraySize = vertArray->size();
+                            for (size_t vertexIndex = 0; vertexIndex < vertArraySize; ++vertexIndex)
+                            {
+                                (*vertArray)[vertexIndex] -= midVec;
+                            }
                         }
                     }
                 }
@@ -287,7 +316,36 @@ class ReaderWriterLAS : public osgDB::ReaderWriter
                 }
             }
 
-            mt->addChild (geode);
+            if (lodCount == 1) {
+                mt->addChild(lodGeode[0]);
+            } else {
+                //osg::Vec3d size(mx.second - mx.first, my.second - my.first, mz.second - mz.first);
+                double length = osg::maximum(mx.second - mx.first, my.second - my.first);
+                length = osg::maximum(length, mz.second - mz.first);
+                osg::LOD *lod = new osg::LOD();
+                if (_recenter) {
+                    lod->setCenterMode(osg::LOD::USER_DEFINED_CENTER);
+                } else {
+                    lod->setCenter(osg::LOD::vec_type(mid_x, mid_y, mid_z));
+                }
+                float rmin = length;
+                osg::Group *lodGroup = new osg::Group();
+                for (unsigned int lodLevel = 0; lodLevel < lodCount; ++lodLevel) lodGroup->addChild(lodGeode[lodLevel]);
+                lod->addChild(lodGroup, 0.0f, rmin);
+                for (unsigned int lodLevel = 1; lodLevel < lodCount; ++lodLevel) {
+                    float rmax = 2.0f * rmin;
+                    if (lodLevel == lodCount - 1) {
+                        lod->addChild(lodGeode[lodLevel], rmin, rmax);
+                    } else {
+                        lodGroup = new osg::Group();
+                        for (unsigned int childLevel = lodLevel; childLevel < lodCount; ++childLevel) lodGroup->addChild(lodGeode[childLevel]);
+                        lod->addChild(lodGroup, rmin, rmax);
+                    }
+                    rmin = rmax;
+                }
+                mt->addChild(lod);
+            }
+            
 
             return mt;
         }
