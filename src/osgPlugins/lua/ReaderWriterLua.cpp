@@ -14,6 +14,7 @@
 #include <osgDB/FileNameUtils>
 #include <osgDB/FileUtils>
 #include <osgDB/Registry>
+#include <osgText/String>
 
 #include "LuaScriptEngine.h"
 
@@ -53,6 +54,36 @@ class ReaderWriterLua : public osgDB::ReaderWriter
             osg::Parameters outputParameters;
 
             osg::ref_ptr<lua::LuaScriptEngine> se = createScriptEngine(options);
+
+            //osg::ref_ptr<Options> optString = options ? new osgDB::ReaderWriter::Options(options->getOptionString()) : new osgDB::ReaderWriter::Options();
+            //inputParameters.push_back(optString);
+            const std::string fn = options->getPluginStringData("filename");
+            const std::string arg = options->getPluginStringData("arguments");
+            std::vector<std::string> argv;
+            argv.push_back(fn);
+            size_t start = 0;
+            bool quoted = arg[start] == '\"';
+            size_t space = arg.find_first_of(quoted ? '\"' : ' ', 1);
+            while (space != std::string::npos) {
+                if (quoted) argv.push_back(arg.substr(start + 1, space - start - 1));
+                else argv.push_back(arg.substr(start, space - start));
+                start = space + 1;
+                if (quoted && (arg[start] == ' ')) ++start;//skip space after closing quote
+                quoted = arg[start] == '\"';
+                space = arg.find_first_of(quoted ? '\"' : ' ', start+1);
+                if (quoted && (space == arg.length() - 1)) break;
+            }
+            if (quoted) argv.push_back(arg.substr(start + 1, arg.length() - start - 2));
+            else argv.push_back(arg.substr(start));
+            //argv.push_back(arg);//todo: split
+            int argc = argv.size();
+            lua_State *L = se->getLuaState();
+            lua_createtable(L, argc, 1);
+            for (int i = 0; i < argc; ++i) {
+                lua_pushstring(L, argv[i].c_str());
+                lua_rawseti(L, -2, i);
+            }
+            lua_setglobal(L, "arg");
 
             if (!se->run(script.get(), entryPoint, inputParameters, outputParameters)) return 0;
 
@@ -153,6 +184,9 @@ class ReaderWriterLua : public osgDB::ReaderWriter
 
             osg::ref_ptr<Options> local_opt = options ? static_cast<Options*>(options->clone(osg::CopyOp::SHALLOW_COPY)) : new Options;
             local_opt->getDatabasePathList().push_front(osgDB::getFilePath(fileName));
+            //from curl
+            local_opt->setPluginStringData("STREAM_FILENAME", osgDB::getSimpleFileName(fileName));
+            local_opt->setPluginStringData("filename", fileName);
 
             osgDB::ifstream istream(fileName.c_str(), std::ios::in);
             if(!istream) return ReadResult::FILE_NOT_HANDLED;
