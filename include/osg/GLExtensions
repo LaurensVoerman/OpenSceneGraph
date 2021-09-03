@@ -149,6 +149,15 @@ class VertexAttribAlias
             _osgName(osgName),
             _declaration(declaration) {}
 
+        VertexAttribAlias& operator = (const VertexAttribAlias& rhs)
+        {
+            _location = rhs._location;
+            _glName = rhs._glName;
+            _osgName = rhs._osgName;
+            _declaration = rhs._declaration;
+            return *this;
+        }
+
         GLuint      _location;
         std::string _glName;
         std::string _osgName;
@@ -521,6 +530,7 @@ class OSG_EXPORT GLExtensions : public osg::Referenced
         bool isTextureCompressionETC2Supported;
         bool isTextureCompressionRGTCSupported;
         bool isTextureCompressionPVRTCSupported;
+        bool isTextureCompressionASTCSupported;
         bool isTextureMirroredRepeatSupported;
         bool isTextureEdgeClampSupported;
         bool isTextureBorderClampSupported;
@@ -530,6 +540,7 @@ class OSG_EXPORT GLExtensions : public osg::Referenced
         bool isShadowSupported;
         bool isShadowAmbientSupported;
         bool isTextureMaxLevelSupported;
+        bool isTextureLODBiasSupported;
         GLint maxTextureSize;
         bool isClientStorageSupported;
         bool isTextureIntegerEXTSupported;

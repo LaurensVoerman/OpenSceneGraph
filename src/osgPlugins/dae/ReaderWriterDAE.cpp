@@ -26,7 +26,7 @@
 #include "daeReader.h"
 #include "daeWriter.h"
 
-#ifdef WIN32
+#ifdef _WIN32
 #include "windows.h"
 #endif
 
@@ -67,6 +67,8 @@ ReaderWriterDAE::readNode(std::istream& fin,
             else if (opt == "daeUseSequencedTextureUnits") pluginOptions.usePredefinedTextureUnits = false;
         }
     }
+
+    pluginOptions.options = options ? osg::clone(options, osg::CopyOp::SHALLOW_COPY) : new Options;
 
     if (NULL == pDAE)
     {
