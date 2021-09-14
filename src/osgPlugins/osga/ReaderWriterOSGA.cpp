@@ -61,7 +61,7 @@ public:
 
     virtual ReadResult readMasterFile(ReadType type, const std::string& file, const Options* options) const
     {
-        ReadResult result = openArchive(file, osgDB::Archive::READ);
+        ReadResult result = openArchive(file, osgDB::Archive::READ, 4096, options);
 
         if (!result.validArchive()) return result;
 
