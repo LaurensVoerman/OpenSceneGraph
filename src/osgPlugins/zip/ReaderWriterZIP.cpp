@@ -113,7 +113,7 @@ class ReaderWriterZIP : public osgDB::ReaderWriter
 
         virtual osgDB::ReaderWriter::ReadResult readNode(const std::string& file, const osgDB::ReaderWriter::Options* options) const
         {
-            osgDB::ReaderWriter::ReadResult result = openArchive(file, osgDB::Archive::READ);
+            osgDB::ReaderWriter::ReadResult result = openArchive(file, osgDB::Archive::READ, 4096, options);
 
             if (!result.validArchive()) return result;
 
@@ -184,7 +184,7 @@ class ReaderWriterZIP : public osgDB::ReaderWriter
 
         virtual ReadResult readImage(const std::string& file,const Options* options) const
         {
-            osgDB::ReaderWriter::ReadResult result = openArchive(file, osgDB::Archive::READ);
+            osgDB::ReaderWriter::ReadResult result = openArchive(file, osgDB::Archive::READ, 4096, options);
 
             if (!result.validArchive()) return result;
 
