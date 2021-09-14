@@ -1620,17 +1620,17 @@ ReaderWriter::WriteResult Registry::writeScriptImplementation(const Script& imag
     return result;
 }
 
-void Registry::addEntryToObjectCache(const std::string& filename, osg::Object* object, double timestamp, Options *options)
+void Registry::addEntryToObjectCache(const std::string& filename, osg::Object* object, double timestamp, const Options *options)
 {
     if (_objectCache.valid()) _objectCache->addEntryToObjectCache(filename, object, timestamp, options);
 }
 
-osg::Object* Registry::getFromObjectCache(const std::string& filename, Options *options)
+osg::Object* Registry::getFromObjectCache(const std::string& filename, const Options *options)
 {
     return _objectCache.valid() ? _objectCache->getFromObjectCache(filename, options) : 0;
 }
 
-osg::ref_ptr<osg::Object> Registry::getRefFromObjectCache(const std::string& filename, Options *options)
+osg::ref_ptr<osg::Object> Registry::getRefFromObjectCache(const std::string& filename, const Options *options)
 {
     return _objectCache.valid() ? _objectCache->getRefFromObjectCache(filename, options) : 0;
 }
@@ -1646,7 +1646,7 @@ void Registry::removeExpiredObjectsInCache(const osg::FrameStamp& frameStamp)
     if (_objectCache.valid()) _objectCache->removeExpiredObjectsInCache(expiryTime);
 }
 
-void Registry::removeFromObjectCache(const std::string& filename, Options *options)
+void Registry::removeFromObjectCache(const std::string& filename, const Options *options)
 {
     if (_objectCache.valid()) _objectCache->removeFromObjectCache(filename, options);
 }

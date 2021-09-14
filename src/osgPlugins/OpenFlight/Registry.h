@@ -49,10 +49,10 @@ class Registry : public osg::Referenced
         void addToExternalReadQueue(const std::string& filename, osg::Group* parent);
 
         // Local cache
-        void addExternalToLocalCache(const std::string& filename, osg::Node* node);
-        osg::Node* getExternalFromLocalCache(const std::string& filename);
-        void addTextureToLocalCache(const std::string& filename, osg::StateSet* stateset);
-        osg::StateSet* getTextureFromLocalCache(const std::string& filename);
+        void addExternalToLocalCache(const std::string& filename, osg::Node* node, const osgDB::ReaderWriter::Options* options);
+        osg::Node* getExternalFromLocalCache(const std::string& filename, const osgDB::ReaderWriter::Options* options);
+        void addTextureToLocalCache(const std::string& filename, osg::StateSet* stateset, const osgDB::ReaderWriter::Options* options);
+        osg::StateSet* getTextureFromLocalCache(const std::string& filename, const osgDB::ReaderWriter::Options* options);
 
     protected:
 
@@ -69,24 +69,24 @@ inline void Registry::addToExternalReadQueue(const std::string& filename, osg::G
     _externalReadQueue.push( FilenameParentPair(filename,parent) );
 }
 
-inline void Registry::addExternalToLocalCache(const std::string& filename, osg::Node* node)
+inline void Registry::addExternalToLocalCache(const std::string& filename, osg::Node* node, const osgDB::ReaderWriter::Options* options)
 {
-    osgDB::Registry::instance()->addEntryToObjectCache(filename, node);
+    osgDB::Registry::instance()->addEntryToObjectCache(filename, node, 0.0, options);
 }
 
-inline osg::Node* Registry::getExternalFromLocalCache(const std::string& filename)
+inline osg::Node* Registry::getExternalFromLocalCache(const std::string& filename, const osgDB::ReaderWriter::Options* options)
 {
-    return dynamic_cast<osg::Node*>(osgDB::Registry::instance()->getFromObjectCache(filename));
+    return dynamic_cast<osg::Node*>(osgDB::Registry::instance()->getFromObjectCache(filename,options));
 }
 
-inline void Registry::addTextureToLocalCache(const std::string& filename, osg::StateSet* stateset)
+inline void Registry::addTextureToLocalCache(const std::string& filename, osg::StateSet* stateset, const osgDB::ReaderWriter::Options* options)
 {
-    osgDB::Registry::instance()->addEntryToObjectCache(filename, stateset);
+    osgDB::Registry::instance()->addEntryToObjectCache(filename, stateset, 0.0, options);
 }
 
-inline osg::StateSet* Registry::getTextureFromLocalCache(const std::string& filename)
+inline osg::StateSet* Registry::getTextureFromLocalCache(const std::string& filename, const osgDB::ReaderWriter::Options* options)
 {
-    return dynamic_cast<osg::StateSet*>(osgDB::Registry::instance()->getFromObjectCache(filename));
+    return dynamic_cast<osg::StateSet*>(osgDB::Registry::instance()->getFromObjectCache(filename, options));
 }
 
 /** Proxy class for automatic registration of reader/writers with the Registry.*/
