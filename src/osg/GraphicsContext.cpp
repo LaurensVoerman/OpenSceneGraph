@@ -695,13 +695,14 @@ void GraphicsContext::runOperations()
         osg::Camera* camera = *itr;
         if (camera->getRenderer()) (*(camera->getRenderer()))(this);
     }
-
+    //lock the operations while iterating
+    OpenThreads::ScopedLock<OpenThreads::Mutex> lock(_operationsMutex);
     for(GraphicsOperationQueue::iterator itr = _operations.begin();
         itr != _operations.end();
         )
     {
         {
-            OpenThreads::ScopedLock<OpenThreads::Mutex> lock(_operationsMutex);
+//            OpenThreads::ScopedLock<OpenThreads::Mutex> lock(_operationsMutex);
             _currentOperation = *itr;
 
             if (!_currentOperation->getKeep())
@@ -727,7 +728,7 @@ void GraphicsContext::runOperations()
             (*_currentOperation)(this);
 
             {
-                OpenThreads::ScopedLock<OpenThreads::Mutex> lock(_operationsMutex);
+//                OpenThreads::ScopedLock<OpenThreads::Mutex> lock(_operationsMutex);
                 _currentOperation = 0;
             }
         }
