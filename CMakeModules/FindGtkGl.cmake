@@ -1,5 +1,7 @@
 #use pkg-config to find various modues
+SET(FPHSA_NAME_MISMATCHED true)
 INCLUDE(FindPkgConfig OPTIONAL)
+UNSET(FPHSA_NAME_MISMATCHED)
 
 IF(PKG_CONFIG_FOUND)
 

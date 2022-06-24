@@ -8,7 +8,9 @@
 # correspond to the ./configure --prefix=$GTA_DIR
 # used in building libgta.
 
+SET(FPHSA_NAME_MISMATCHED true)
 INCLUDE(FindPkgConfig OPTIONAL)
+UNSET(FPHSA_NAME_MISMATCHED)
 
 IF(PKG_CONFIG_FOUND)
 

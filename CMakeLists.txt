@@ -13,7 +13,7 @@ SET(OPENSCENEGRAPH_RELEASE_CANDIDATE 0)
 set(CMAKE_ALLOW_LOOSE_LOOP_CONSTRUCTS TRUE)
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8.0 FATAL_ERROR)
+CMAKE_MINIMUM_REQUIRED(VERSION 2.8.0...3.15.5 FATAL_ERROR)
 
 if(COMMAND cmake_policy)
     # Works around warnings libraries linked against that don't
@@ -779,7 +779,7 @@ ELSE()
     FIND_PACKAGE(ZeroConf)
 
     FIND_PACKAGE(LIBLAS)
-    FIND_PACKAGE(Brotli)
+    FIND_PACKAGE(BROTLI)
 
     IF (NOT(OSG_USE_LOCAL_LUA_SOURCE))
         FIND_PACKAGE(Lua52)
@@ -1170,7 +1170,10 @@ ENDIF()
 
 
 # For Doxygen
-INCLUDE(${CMAKE_ROOT}/Modules/Documentation.cmake OPTIONAL)
+#cmake documentation module is now depriciated
+#INCLUDE(${CMAKE_ROOT}/Modules/Documentation.cmake OPTIONAL)
+find_package(Doxygen)
+
 OPTION(BUILD_DOCUMENTATION "Build OpenSceneGraph reference documentation using doxygen (use: make doc_openscenegraph doc_openthreads)" OFF)
 MARK_AS_ADVANCED(CLEAR BUILD_DOCUMENTATION)
 # To build the documention, you will have to enable it
