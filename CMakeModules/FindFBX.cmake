@@ -77,55 +77,33 @@ ENDIF()
 
 SET(FBX_LIBNAME_DEBUG ${FBX_LIBNAME}d)
 
-SET( FBX_SEARCH_PATHS
-    $ENV{FBX_DIR}
-    "$ENV{ProgramW6432}/Autodesk/FBX/FBX SDK/2020.3.1"
-    "$ENV{PROGRAMFILES}/Autodesk/FBX/FBX SDK/2020.3.1"
-    "/Applications/Autodesk/FBX SDK/2020.3.1"
-    "$ENV{ProgramW6432}/Autodesk/FBX/FBX SDK/2020.0.1"
-    "$ENV{PROGRAMFILES}/Autodesk/FBX/FBX SDK/2020.0.1"
-    "/Applications/Autodesk/FBX SDK/2020.0.1"
-    "$ENV{ProgramW6432}/Autodesk/FBX/FBX SDK/2020.0"
-    "$ENV{PROGRAMFILES}/Autodesk/FBX/FBX SDK/2020.0"
-    "/Applications/Autodesk/FBX SDK/2020.0"
-    "$ENV{ProgramW6432}/Autodesk/FBX/FBX SDK/2019.5"
-    "$ENV{PROGRAMFILES}/Autodesk/FBX/FBX SDK/2019.5"
-    "/Applications/Autodesk/FBX SDK/2019.5"
-    "$ENV{ProgramW6432}/Autodesk/FBX/FBX SDK/2019.2"
-    "$ENV{PROGRAMFILES}/Autodesk/FBX/FBX SDK/2019.2"
-    "/Applications/Autodesk/FBX SDK/2019.2"
-    "$ENV{ProgramW6432}/Autodesk/FBX/FBX SDK/2019.0"
-    "$ENV{PROGRAMFILES}/Autodesk/FBX/FBX SDK/2019.0"
-    "/Applications/Autodesk/FBX SDK/2019.0"
-    "$ENV{ProgramW6432}/Autodesk/FBX/FBX SDK/2018.1.1"
-    "$ENV{PROGRAMFILES}/Autodesk/FBX/FBX SDK/2018.1.1"
-    "/Applications/Autodesk/FBX SDK/2018.1.1"
-    "$ENV{ProgramW6432}/Autodesk/FBX/FBX SDK/2018.0"
-    "$ENV{PROGRAMFILES}/Autodesk/FBX/FBX SDK/2018.0"
-    "/Applications/Autodesk/FBX SDK/2018.0"
-    "$ENV{ProgramW6432}/Autodesk/FBX/FBX SDK/2017.1"
-    "$ENV{PROGRAMFILES}/Autodesk/FBX/FBX SDK/2017.1"
-    "/Applications/Autodesk/FBX SDK/2017.1"
-    "$ENV{ProgramW6432}/Autodesk/FBX/FBX SDK/2017.0"
-    "$ENV{PROGRAMFILES}/Autodesk/FBX/FBX SDK/2017.0"
-    "/Applications/Autodesk/FBX SDK/2017.0"
-    "$ENV{ProgramW6432}/Autodesk/FBX/FBX SDK/2016.1.2"
-    "$ENV{PROGRAMFILES}/Autodesk/FBX/FBX SDK/2016.1.2"
-    "/Applications/Autodesk/FBX/FBX SDK/2016.1.2"
-    /Applications/Autodesk/FBXSDK201612
-    "$ENV{ProgramW6432}/Autodesk/FBX/FBX SDK/2016.1.1"
-    "$ENV{PROGRAMFILES}/Autodesk/FBX/FBX SDK/2016.1.1"
-    "/Applications/Autodesk/FBX/FBX SDK/2016.1.1"
-    /Applications/Autodesk/FBXSDK201611
-    "$ENV{ProgramW6432}/Autodesk/FBX/FBX SDK/2015.1"
-    "$ENV{PROGRAMFILES}/Autodesk/FBX/FBX SDK/2015.1"
-    "/Applications/Autodesk/FBX/FBX SDK/2015.1"
-    /Applications/Autodesk/FBXSDK20151
-    "$ENV{ProgramW6432}/Autodesk/FBX/FBX SDK/2014.2"
-    "$ENV{PROGRAMFILES}/Autodesk/FBX/FBX SDK/2014.2"
-    "/Applications/Autodesk/FBX/FBX SDK/2014.2"
-    /Applications/Autodesk/FBXSDK20142
-)
+
+IF(DEFINED ENV{FBX_DIR})
+  IF(IS_DIRECTORY $ENV{FBX_DIR})
+    SET( FBX_SEARCH_PATHS ${FBX_SEARCH_PATHS} $ENV{FBX_DIR})
+  ENDIF(IS_DIRECTORY $ENV{FBX_DIR})
+ENDIF(DEFINED ENV{FBX_DIR})
+
+SET( FBX_VERSIONS 2020.3.4 2020.3.1 2020.0.1 2020.0 2019.5 2019.2 2019.0 2018.1.1 2018.0 2017.1 2016.1.2 2015.1 2014.2)
+FOREACH( FBX_VERSION ${FBX_VERSIONS} )
+  IF(IS_DIRECTORY "$ENV{ProgramW6432}/Autodesk/FBX/FBX SDK/${FBX_VERSION}")
+    SET( FBX_SEARCH_PATHS ${FBX_SEARCH_PATHS} "$ENV{ProgramW6432}/Autodesk/FBX/FBX SDK/${FBX_VERSION}")
+  ENDIF(IS_DIRECTORY "$ENV{ProgramW6432}/Autodesk/FBX/FBX SDK/${FBX_VERSION}")
+  IF(IS_DIRECTORY "$ENV{PROGRAMFILES}/Autodesk/FBX/FBX SDK/${FBX_VERSION}")
+    SET( FBX_SEARCH_PATHS ${FBX_SEARCH_PATHS} "$ENV{PROGRAMFILES}/Autodesk/FBX/FBX SDK/${FBX_VERSION}")
+  ENDIF(IS_DIRECTORY "$ENV{PROGRAMFILES}/Autodesk/FBX/FBX SDK/${FBX_VERSION}")
+  IF(IS_DIRECTORY "/Applications/Autodesk/FBX SDK/${FBX_VERSION}")
+    SET( FBX_SEARCH_PATHS ${FBX_SEARCH_PATHS} "/Applications/Autodesk/FBX SDK/${FBX_VERSION}")
+  ENDIF(IS_DIRECTORY "/Applications/Autodesk/FBX SDK/${FBX_VERSION}")
+ENDFOREACH( FBX_VERSION ${FBX_VERSIONS} )
+
+#VERY OLD VERSIONS
+SET( FBX_OLD_VERSIONS 201612 201611 20151 20142)
+FOREACH( FBX_VERSION ${FBX_OLD_VERSIONS} )
+  IF(IS_DIRECTORY "/Applications/Autodesk/FBXSDK${FBX_VERSION}")
+    SET( FBX_SEARCH_PATHS ${FBX_SEARCH_PATHS} "/Applications/Autodesk/FBXSDK${FBX_VERSION}")
+  ENDIF(IS_DIRECTORY "/Applications/Autodesk/FBXSDK${FBX_VERSION}")
+ENDFOREACH( FBX_VERSION ${FBX_OLD_VERSIONS} )
 
 # search for headers & debug/release libraries
 FIND_PATH(FBX_INCLUDE_DIR "fbxsdk.h"
