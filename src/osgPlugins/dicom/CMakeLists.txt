@@ -5,7 +5,7 @@ IF  (DCMTK_FOUND)
 
     SET(TARGET_SRC ReaderWriterDICOM.cpp )
 
-    LINK_LIBRARIES(DCMTK::DCMTK)
+    LINK_LIBRARIES(${DCMTK_LIBRARIES})
 
     add_compile_options("${DCMTK_CMAKE_CXX_FLAGS}")
     set(CMAKE_CXX_STANDARD 17)
