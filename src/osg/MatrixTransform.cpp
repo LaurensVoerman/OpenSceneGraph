@@ -30,6 +30,7 @@ MatrixTransform::MatrixTransform(const Matrix& mat )
     _referenceFrame = RELATIVE_RF;
 
     _matrix = mat;
+    _inverse = NULL;
 }
 
 
