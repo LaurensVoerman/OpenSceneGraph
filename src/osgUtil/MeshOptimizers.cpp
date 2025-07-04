@@ -836,6 +836,10 @@ void VertexCacheVisitor::doVertexOptimization(Geometry& geom,
             unsigned vertIdx = triToAdd->verts[i];
             Vertex* vert = &vertices[vertIdx];
             vertDrawList.push_back(vertIdx);
+			/*
+			MeshOptimizers.cpp(839,18): warning C4858: discarding return value: The 'remove' and 'remove_if' algorithms return the iterator past the last element that should be kept. You need to call container.erase(result, container.end()) afterwards. In C++20, 'std::erase' and 'std::erase_if' are simpler replacements for these two steps.
+			*/
+			auto dummy =
             std::remove(vertTriListStore.begin() + vert->triList,
                    vertTriListStore.begin() + vert->triList
                    + vert->numActiveTris,
