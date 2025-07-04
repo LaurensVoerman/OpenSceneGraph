@@ -1,7 +1,11 @@
 #ifdef __BORLANDC__
 #pragma hdrstop
 #endif
-
+#ifdef _MSC_VER
+# if (_MSC_VER >= 1944)
+#define FLOAT_MATH_FUNCTIONS
+# endif
+#endif
 #include "osgviewerFOX.h"
 
 #include "FOX_OSG_MDIView.h"
