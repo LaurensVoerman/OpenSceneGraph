@@ -594,8 +594,10 @@ osgDB::ReaderWriter::ReadResult ReaderWriterCURL::readFile(ObjectType objectType
     std::string cacheFileName;
     // Try to find a reader by file extension. If this fails, we will fetch the file
     // anyway and try to get a reader via mime-type.
-    osgDB::ReaderWriter *reader =
-        osgDB::Registry::instance()->getReaderWriterForExtension( ext );
+    osgDB::ReaderWriter* reader = NULL;
+    if ((ext.length() > 0) && (ext.length() < 8)) {
+        reader = osgDB::Registry::instance()->getReaderWriterForExtension(ext);
+    }
     if (reader && objectType != NODE) {//cannot cache reader via mime-type. // nodes might be cached by the database pager, if loaded from a pagedLOD
         osg::ref_ptr<osgDB::FileCache> fileCache = osgDB::Registry::instance()->getFileCache();
         bool cacheImages = options ? (options->getObjectCacheHint() & osgDB::Options::CACHE_IMAGES) != 0 : false;
