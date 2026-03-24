@@ -46,7 +46,19 @@ std::string FileCache::createCacheFileName(const std::string& originalFileName) 
     std::string cacheFileName = _fileCachePath + "/" +
                                 serverAddress + (serverAddress.empty()?"":"/") +
                                 osgDB::getServerFileName(originalFileName);
-
+    //pull file extention out of arguments
+    std::string::size_type pos = cacheFileName.find("&Format=image%2F");//Format=image%2Fpng&TileMatrix=01&TileCol=0&TileRow=0.png.14.wmts
+    if (std::string::npos != pos) {
+        std::string formatStr = cacheFileName.substr(pos+16);
+        std::string::size_type amp = formatStr.find_first_of('&');
+        if (std::string::npos != amp) {
+            cacheFileName += "." + formatStr.substr(0, amp);
+        } else {
+            cacheFileName += "." + formatStr;
+        }
+    }
+    std::replace(cacheFileName.begin(), cacheFileName.end(), '?', '\\');
+    std::replace(cacheFileName.begin(), cacheFileName.end(), '&', '\\');
     OSG_DEBUG<<"FileCache::createCacheFileName("<<originalFileName<<") = "<<cacheFileName<<std::endl;
 
     return cacheFileName;
