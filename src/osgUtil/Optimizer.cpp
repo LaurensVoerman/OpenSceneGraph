@@ -3189,7 +3189,7 @@ void Optimizer::TextureAtlasBuilder::completeRow(unsigned int indexAtlas)
     }
 }
 
-bool Optimizer::TextureAtlasBuilder::buildAtlas(std::string &baseName)
+bool Optimizer::TextureAtlasBuilder::buildAtlas(const std::string &baseName)
 {
     bool atlasNPOT = false;
     if (const char* osgAtlasNPOT = getenv("OSG_ATLAS_NPOT")) {

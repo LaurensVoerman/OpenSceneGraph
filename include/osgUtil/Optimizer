@@ -664,7 +664,8 @@ class OSGUTIL_EXPORT Optimizer
             const osg::Image* getSourceImage(unsigned int i) { return _sourceList[i]->_image.get(); }
             const osg::Texture2D* getSourceTexture(unsigned int i) { return _sourceList[i]->_texture.get(); }
 
-            bool buildAtlas(std::string &baseName);
+            bool buildAtlas(const std::string &baseName);
+            bool buildAtlas() { const std::string n("atlas_"); return buildAtlas(n); }
             osg::Image* getImageAtlas(unsigned int i);
             osg::Texture2D* getTextureAtlas(unsigned int i);
             osg::Matrix getTextureMatrix(unsigned int i);
