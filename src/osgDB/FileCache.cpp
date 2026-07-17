@@ -49,7 +49,7 @@ std::string FileCache::createCacheFileName(const std::string& originalFileName) 
     //pull file extention out of arguments
     std::string::size_type pos = cacheFileName.find("&Format=image%2F");//Format=image%2Fpng&TileMatrix=01&TileCol=0&TileRow=0.png.14.wmts
     if (std::string::npos != pos) {
-        std::string formatStr = cacheFileName.substr(pos+16);
+        std::string formatStr = cacheFileName.substr(pos+16,3);
         std::string::size_type amp = formatStr.find_first_of('&');
         if (std::string::npos != amp) {
             cacheFileName += "." + formatStr.substr(0, amp);
@@ -59,6 +59,54 @@ std::string FileCache::createCacheFileName(const std::string& originalFileName) 
     }
     std::replace(cacheFileName.begin(), cacheFileName.end(), '?', '\\');
     std::replace(cacheFileName.begin(), cacheFileName.end(), '&', '\\');
+    std::vector<std::string> cacheFileName_elements;
+    std::vector<std::string> cacheFileName_skipElements;
+    getPathElements(cacheFileName, cacheFileName_elements);
+    std::string subPath;
+    subPath.reserve(cacheFileName.length());
+    FileType partType = osgDB::DIRECTORY;
+    for (std::vector<std::string>::iterator part = cacheFileName_elements.begin(); part != cacheFileName_elements.end(); ++part) {
+        if (part == cacheFileName_elements.begin()) {
+            subPath = *part;
+        } else {
+            std::vector<std::string>::iterator skipElement = std::find(cacheFileName_skipElements.begin(), cacheFileName_skipElements.end(), *part);
+            if (cacheFileName_skipElements.end() != skipElement) ++skipElement;//repacement part
+            std::string newpart = *part;
+            if (cacheFileName_skipElements.end() != skipElement) newpart = *skipElement;
+            if ((newpart.length() > 0) && (newpart.compare(".") != 0)) { //not empty; not a single dot
+                if (newpart[0] == '.') {
+                    subPath += newpart.substr(1);
+                } else {
+                    subPath = concatPaths(subPath, newpart);
+                }
+                partType = fileType(subPath);
+                if (partType == osgDB::REGULAR_FILE) {
+                    osgDB::ifstream fin(subPath.c_str(), std::ios::in);
+                    if (fin) {
+                        std::string reDir;
+                        fin >> reDir;
+                        if (fileType(reDir) == osgDB::DIRECTORY) {
+                            subPath = reDir;
+                            std::string ignore;
+                            fin >> ignore;
+                            getPathElements(ignore, cacheFileName_skipElements);
+                            while (fin) {
+                                std::string ignore2;
+                                fin >> ignore2;
+                                std::vector<std::string> more_skipElements;
+                                getPathElements(ignore2, more_skipElements);
+                                cacheFileName_skipElements.insert(cacheFileName_skipElements.end(), more_skipElements.begin(), more_skipElements.end());
+                            }
+                        }
+                        else {
+                            OSG_NOTICE << "FileCache::createCacheFileName ERROR: " << subPath << " must contain existing directory name." << std::endl;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    cacheFileName = subPath;
     OSG_DEBUG<<"FileCache::createCacheFileName("<<originalFileName<<") = "<<cacheFileName<<std::endl;
 
     return cacheFileName;
